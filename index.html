@@ -60,6 +60,14 @@
         .astral-title-text {
             text-shadow: 0 0 14px rgba(192, 132, 252, 0.8), 0 0 30px rgba(99, 102, 241, 0.5);
         }
+
+        @keyframes bossPulse {
+            0%, 100% { filter: drop-shadow(0 0 20px rgba(239, 68, 68, 0.8)); transform: scale(1); }
+            50% { filter: drop-shadow(0 0 40px rgba(245, 158, 11, 1)); transform: scale(1.05); }
+        }
+        .boss-aura {
+            animation: bossPulse 1.8s infinite ease-in-out;
+        }
     </style>
 </head>
 <body class="celestial-space-bg text-white min-h-screen flex flex-col justify-between p-2 md:p-5 select-none relative overflow-x-hidden">
@@ -68,12 +76,16 @@
     <div class="max-w-6xl w-full mx-auto flex items-center justify-between text-[11px] font-mono-code text-indigo-300 border-b border-indigo-500/30 pb-1.5 mb-2">
         <div class="flex items-center gap-2">
             <span class="inline-block w-2 h-2 rounded-full bg-purple-400 animate-ping"></span>
-            <span class="font-bold tracking-widest text-purple-300">CELESTIAL_ORBIT: ACTIVE</span>
+            <span class="font-bold tracking-widest text-purple-300">CELESTIAL_ORBIT: ONLINE</span>
             <span class="text-slate-600">|</span>
             <span class="hidden sm:inline text-slate-400">INSCRIBED ANGLE DOMAIN: θ = 1/2 · 2θ</span>
         </div>
         <div class="flex items-center gap-3">
-            <span class="text-amber-300 font-bold">ARC DEFENSE SHIELD: ARMED</span>
+            <div class="flex items-center gap-1.5 bg-slate-900/80 px-2.5 py-0.5 rounded-full border border-rose-500/40">
+                <span class="w-2 h-2 rounded-full bg-rose-500 animate-pulse"></span>
+                <span class="text-rose-300 font-bold">METEOR_DESCENT: </span>
+                <span id="meteor-timer-text" class="text-yellow-300 font-bold">45.0s</span>
+            </div>
             <span class="px-2 py-0.5 rounded bg-indigo-950 border border-purple-500/50 text-purple-300">ASTRAL CORE 60 FPS</span>
         </div>
     </div>
@@ -88,7 +100,7 @@
             <span class="text-3xl md:text-4xl">🛡️</span>
         </div>
         <p class="text-xs md:text-sm text-purple-200/90 mt-1 font-mono-code tracking-wide">
-            [중3 기하] 원주각과 중심각 성질 · 반원의 원주각 90° · 내접사각형 180° · 4인 실시간 에너지 돔 방어전
+            [중3 기하] 원주각과 중심각 2배 · 호의 비례 · 지름 90° · 두 현의 교각 · 5단계 코스믹 보스 레이드
         </p>
     </header>
 
@@ -103,7 +115,7 @@
                 </div>
                 <h2 class="text-2xl md:text-3xl font-celestial text-purple-200 mb-2">성간 방어 사령부 대원 등록</h2>
                 <p class="text-xs md:text-sm text-slate-300">
-                    배틀룸 코드를 공유한 전우들과 팀을 결성하고, 원주각 기하학 공식을 완성하여 행성 에너지 돔을 전개하세요!
+                    배틀룸 코드를 공유한 전우들과 팀을 결성하고, 45초 내로 원주각 공식을 완성하여 행성 코어로 떨어지는 메테오를 격추하세요!
                 </p>
             </div>
 
@@ -159,7 +171,7 @@
             <div class="flex items-center justify-between px-1">
                 <div class="flex items-center gap-2 text-xs font-mono-code text-purple-400">
                     <span class="w-2 h-2 rounded-full bg-purple-400 animate-pulse"></span>
-                    <span>LIVE_OPERATION // 5-WAVE INSCRIBED ANGLE DOME DEFENSE</span>
+                    <span>LIVE_OPERATION // 4-STAGE PIPELINE & 45s METEOR IMPACT SYSTEM</span>
                 </div>
                 <button onclick="resetCurrentRoomData()" class="px-3 py-1.5 bg-rose-950/80 hover:bg-rose-900 border border-rose-500/60 rounded-xl text-xs text-rose-300 font-bold transition active:scale-95 shadow flex items-center gap-1.5 font-mono-code">
                     <span>🧹</span><span>대원 명단 리셋 (0명 청소)</span>
@@ -201,26 +213,26 @@
                 </div>
             </div>
 
-            <!-- Geometric Celestial Orbit 2D Canvas Arena -->
+            <!-- Geometric Celestial Orbit 2D Canvas Arena with Incoming Meteor -->
             <div class="relative w-full h-72 md:h-88 bg-slate-950 rounded-3xl border-2 border-purple-500/60 overflow-hidden shadow-2xl hud-astral-corner">
                 <canvas id="orbit-canvas" class="w-full h-full block cursor-crosshair"></canvas>
                 
                 <!-- Left Top Status Label -->
                 <div class="absolute top-2 left-3 px-3 py-1 bg-slate-950/90 border border-purple-400/60 rounded-full text-xs font-mono-code text-purple-300 z-10 flex items-center gap-2 shadow">
                     <span class="inline-block w-2 h-2 rounded-full bg-purple-400 animate-pulse"></span>
-                    <span>CELESTIAL_VAULT //</span>
+                    <span>ORBIT_DEFENSE //</span>
                     <span id="orbit-status-label" class="font-bold text-amber-300">원주각 성간 기하 궤도 활성</span>
                 </div>
 
-                <!-- Right Top Tactical Starlight Ping Help -->
-                <div class="absolute top-2 right-3 px-3 py-1 bg-slate-950/90 border border-purple-400/60 rounded-full text-[11px] font-celestial text-purple-300 z-10 flex items-center gap-1.5 shadow">
-                    <span>👆 캔버스 터치:</span>
-                    <span class="text-amber-300">성간 핑(Starlight Ping)</span>
+                <!-- Right Top Meteor Warning Banner -->
+                <div class="absolute top-2 right-3 px-3 py-1 bg-rose-950/90 border border-rose-500/60 rounded-full text-[11px] font-celestial text-rose-300 z-10 flex items-center gap-1.5 shadow animate-pulse">
+                    <span>☄️ 낙하까지:</span>
+                    <span id="canvas-meteor-timer" class="font-bold text-yellow-300 font-mono-code">45.0초</span>
                 </div>
 
                 <!-- Bottom Status Ticker inside Canvas -->
                 <div class="absolute bottom-2 left-3 right-3 px-3 py-1 bg-slate-950/80 border border-slate-800 rounded-xl text-[11px] font-mono-code text-slate-400 flex items-center justify-between">
-                    <span id="canvas-status-stream">> [SYS] 외계 에너지 빔 진입 중... 원주각 및 중심각 돔 동기화 요망</span>
+                    <span id="canvas-status-stream">> [SYS] 외계 메테오 진입 중... 원주각 및 비례 관계 락온 요망</span>
                     <span class="text-purple-400 font-bold hidden sm:inline">INSCRIBED ANGLE ORBIT</span>
                 </div>
             </div>
@@ -244,7 +256,7 @@
                     <h4 class="text-2xl font-celestial text-rose-400 mb-1">원주각 위상 왜곡! 긴급 궤도 재정렬 중</h4>
                     <p class="text-xs md:text-sm text-slate-200 mb-3">
                         원주각 공식 또는 각도 연산 오류! 무작위 찍기를 방지하기 위해 5초간 쉴드 콘솔이 잠금 처리됩니다.<br>
-                        팀원들과 중심각 2배, 반원 90°, 내접 사각형 180° 성질을 다시 정밀 검산하세요!
+                        팀원들과 중심각 2배, 호의 비례, 반원 90°, 두 현의 교각 성질을 다시 정밀 검산하세요!
                     </p>
                     <div class="px-5 py-2.5 rounded-2xl bg-rose-950 border-2 border-rose-400 font-celestial text-2xl text-amber-300 flex items-center gap-2">
                         <span>⏳ 궤도 정렬까지:</span>
@@ -257,15 +269,15 @@
                     <span id="my-team-badge" class="text-xs px-3.5 py-1 rounded-full font-bold font-celestial">소속 성단</span>
                     <span id="my-role-badge" class="text-xs px-3.5 py-1 bg-amber-500/20 text-amber-300 border border-amber-500/40 rounded-full font-bold">내 포지션</span>
                     <span id="wave-target-badge" class="text-xs px-3.5 py-1 bg-purple-500/20 text-purple-300 border border-purple-500/40 rounded-full font-bold font-mono-code">
-                        🛡️ 방어 대상 : <span id="current-op-name">웨이브 #1 : 기본 중심각-원주각</span>
+                        🛡️ 방어 대상 : <span id="current-op-name">웨이브 #1 : 기본 중심각-원주각 2배</span>
                     </span>
                 </div>
 
                 <!-- Inscribed Angle Geometric Clue Display -->
                 <div class="w-full max-w-3xl bg-slate-900/90 border-2 border-purple-400/80 rounded-2xl p-3.5 md:p-5 shadow-inner mb-3 hud-astral-corner">
                     <div class="text-xs font-semibold text-purple-300 mb-1.5 tracking-wider uppercase flex items-center justify-between px-2 font-mono-code">
-                        <span>[ASTRAL GEOMETRY // INSCRIBED ANGLE THEOREM]</span>
-                        <span id="theorem-type-label" class="text-amber-300">THEOREM: CENTER_VS_INSCRIBED</span>
+                        <span>[ASTRAL GEOMETRY // THEOREM TELEMETRY]</span>
+                        <span id="theorem-type-label" class="text-amber-300">THEOREM: CENTER_DOUBLE</span>
                     </div>
                     <div id="geometry-clue-display" class="text-lg md:text-2xl font-celestial text-amber-300 tracking-wide font-mono-code py-1 leading-relaxed">
                         원주각 성간 기하 제원 수신 중...
@@ -275,15 +287,15 @@
                 <!-- Inscribed Angle Hologram Assembly Puzzle HUD -->
                 <div class="w-full max-w-2xl bg-slate-900/70 border border-purple-500/40 rounded-xl p-2.5 mb-3 text-xs font-mono-code">
                     <div class="text-slate-400 text-[11px] mb-1.5 flex items-center justify-center gap-1">
-                        <span>🧩</span><span>오리진 돔 에너지 조합 : 호 식별 ➔ 기하 정리 판별 ➔ 각도 θ 도출 ➔ 돔 전개!</span>
+                        <span>🧩</span><span>오리진 돔 에너지 조합 : 호/법칙 ➔ 위상 수식 ➔ 방어각 θ ➔ 돔 전개!</span>
                     </div>
                     <div class="flex flex-wrap items-center justify-center gap-2 text-sm md:text-base font-bold">
                         <span id="slot-arc" class="px-2.5 py-1 rounded bg-slate-800 border border-slate-600 text-slate-400 font-bold transition-all">
-                            공유 호 AB 식별
+                            기하 법칙 식별
                         </span>
                         <span class="text-slate-400">➔</span>
                         <span id="slot-theorem" class="px-2.5 py-1 rounded bg-slate-800 border border-slate-600 text-slate-400 font-bold transition-all">
-                            기하 법칙 (2배/90°/180°)
+                            위상 연계 수식
                         </span>
                         <span class="text-slate-400">➔</span>
                         <div id="slot-angle" class="px-2.5 py-1 rounded bg-slate-800 border border-slate-600 text-slate-400 font-bold transition-all">
@@ -301,35 +313,35 @@
                     <!-- Step 0: Identify Property / Relation Buttons -->
                     <div id="property-select-control" class="hidden flex flex-wrap items-center justify-center gap-2.5 w-full max-w-md">
                         <button onclick="submitPropertyStep(0)" id="prop-btn-0" class="flex-1 min-w-[130px] py-3.5 bg-gradient-to-b from-slate-800 to-slate-900 hover:from-purple-800 hover:to-indigo-800 border-2 border-purple-400 rounded-xl font-celestial text-sm md:text-base text-purple-200 transition active:scale-95 shadow-lg">
-                            중심각 = 2 × 원주각
+                            법칙 A
                         </button>
                         <button onclick="submitPropertyStep(1)" id="prop-btn-1" class="flex-1 min-w-[130px] py-3.5 bg-gradient-to-b from-slate-800 to-slate-900 hover:from-purple-800 hover:to-indigo-800 border-2 border-purple-400 rounded-xl font-celestial text-sm md:text-base text-purple-200 transition active:scale-95 shadow-lg">
-                            반원의 원주각 = 90°
+                            법칙 B
                         </button>
                         <button onclick="submitPropertyStep(2)" id="prop-btn-2" class="flex-1 min-w-[130px] py-3.5 bg-gradient-to-b from-slate-800 to-slate-900 hover:from-purple-800 hover:to-indigo-800 border-2 border-purple-400 rounded-xl font-celestial text-sm md:text-base text-purple-200 transition active:scale-95 shadow-lg">
-                            내접 사각형 대각합 = 180°
+                            법칙 C
                         </button>
                     </div>
 
                     <!-- Step 1: Intermediate Geometry Multi-choice Buttons (4 Choices) -->
                     <div id="theorem-choice-control" class="hidden grid grid-cols-2 gap-2.5 w-full max-w-md">
-                        <button id="choice-btn-0" onclick="submitChoiceStep(0)" class="p-3 bg-slate-900 hover:bg-purple-950 border-2 border-purple-400 rounded-xl font-celestial text-base text-purple-200 transition active:scale-95 shadow">
+                        <button id="choice-btn-0" onclick="submitChoiceStep(0)" class="p-3 bg-slate-900 hover:bg-purple-950 border-2 border-purple-400 rounded-xl font-celestial text-sm text-purple-200 transition active:scale-95 shadow">
                             선택 A
                         </button>
-                        <button id="choice-btn-1" onclick="submitChoiceStep(1)" class="p-3 bg-slate-900 hover:bg-purple-950 border-2 border-purple-400 rounded-xl font-celestial text-base text-purple-200 transition active:scale-95 shadow">
+                        <button id="choice-btn-1" onclick="submitChoiceStep(1)" class="p-3 bg-slate-900 hover:bg-purple-950 border-2 border-purple-400 rounded-xl font-celestial text-sm text-purple-200 transition active:scale-95 shadow">
                             선택 B
                         </button>
-                        <button id="choice-btn-2" onclick="submitChoiceStep(2)" class="p-3 bg-slate-900 hover:bg-purple-950 border-2 border-purple-400 rounded-xl font-celestial text-base text-purple-200 transition active:scale-95 shadow">
+                        <button id="choice-btn-2" onclick="submitChoiceStep(2)" class="p-3 bg-slate-900 hover:bg-purple-950 border-2 border-purple-400 rounded-xl font-celestial text-sm text-purple-200 transition active:scale-95 shadow">
                             선택 C
                         </button>
-                        <button id="choice-btn-3" onclick="submitChoiceStep(3)" class="p-3 bg-slate-900 hover:bg-purple-950 border-2 border-purple-400 rounded-xl font-celestial text-base text-purple-200 transition active:scale-95 shadow">
+                        <button id="choice-btn-3" onclick="submitChoiceStep(3)" class="p-3 bg-slate-900 hover:bg-purple-950 border-2 border-purple-400 rounded-xl font-celestial text-sm text-purple-200 transition active:scale-95 shadow">
                             선택 D
                         </button>
                     </div>
 
                     <!-- Step 2: Number Input Mode (Calculate Angle θ degrees) -->
                     <div id="number-input-control" class="hidden flex flex-col sm:flex-row items-center justify-center gap-2 w-full max-w-md">
-                        <input type="number" id="step-number-input" placeholder="각도 θ 값 입력 (°)" 
+                        <input type="text" inputmode="numeric" id="step-number-input" placeholder="각도 θ 값 입력 (°)" 
                                class="w-full sm:w-48 px-4 py-3 rounded-xl bg-slate-900 border-2 border-purple-400 text-white font-bold text-xl text-center focus:outline-none focus:ring-2 focus:ring-purple-300 font-mono-code"
                                onkeydown="if(event.key==='Enter') submitAngleStep()">
                         <button id="submit-step-btn" onclick="submitAngleStep()" 
@@ -341,7 +353,7 @@
                     <!-- Step 3 Fire Button (Opens Payload Modal) -->
                     <div id="fire-dome-control" class="hidden flex flex-col items-center gap-2 w-full max-w-md">
                         <button onclick="openDomeModal()" class="w-full py-4 bg-gradient-to-r from-purple-500 via-indigo-600 to-amber-400 hover:from-purple-400 hover:to-indigo-500 text-slate-950 font-celestial text-xl md:text-2xl rounded-2xl shadow-xl border-2 border-white active:scale-95 transition animate-pulse flex items-center justify-center gap-2">
-                            <span>🛡️</span><span>에너지 돔 전개 & 반사 펄스 (DEFEND & REFLECT! ⚡)</span>
+                            <span>🛡️</span><span>에너지 돔 전개 & 메테오 요격! (DEFEND & REFLECT! ⚡)</span>
                         </button>
                         <span class="text-xs text-amber-200 font-semibold font-mono-code">> 원주각 위상 100% 동기화 완료! 전술 펄스를 방출하세요!</span>
                     </div>
@@ -355,10 +367,10 @@
                 <!-- 4-Stage Pipeline Tracker Cards -->
                 <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 w-full max-w-3xl mt-4 pt-3 border-t border-slate-800 text-xs font-semibold font-mono-code">
                     <div id="stage-card-0" class="p-2.5 rounded-xl border transition-all text-slate-400 bg-slate-900/60 border-slate-800">
-                        ① 기하 법칙 판별관
+                        ① 기하 법칙 판별
                     </div>
                     <div id="stage-card-1" class="p-2.5 rounded-xl border transition-all text-slate-400 bg-slate-900/60 border-slate-800">
-                        ② 위상 연계 분석사
+                        ② 위상 연계 분석
                     </div>
                     <div id="stage-card-2" class="p-2.5 rounded-xl border transition-all text-slate-400 bg-slate-900/60 border-slate-800">
                         ③ 방어 각도 θ 도출
@@ -372,14 +384,14 @@
                 <div id="battle-feedback" class="text-sm font-bold min-h-[24px] mt-2 font-mono-code"></div>
 
                 <div class="flex flex-wrap items-center justify-center gap-2 mt-2">
-                    <button onclick="sendQuickCheer('원주각 = (1/2) × 중심각, 중심각은 2배! 📐')" class="px-3 py-1 bg-slate-900 hover:bg-slate-800 border border-purple-500/40 rounded-lg text-xs text-purple-200 font-mono-code">
-                        📐 중심각은 원주각의 2배!
+                    <button onclick="sendQuickCheer('중심각은 원주각의 2배, 원주각은 절반! 📐')" class="px-3 py-1 bg-slate-900 hover:bg-slate-800 border border-purple-500/40 rounded-lg text-xs text-purple-200 font-mono-code">
+                        📐 원주각 = 중심각의 1/2!
                     </button>
-                    <button onclick="sendQuickCheer('지름(반원)을 지나는 원주각은 무조건 90°! 💡')" class="px-3 py-1 bg-slate-900 hover:bg-slate-800 border border-purple-500/40 rounded-lg text-xs text-purple-200 font-mono-code">
-                        💡 지름에 대한 원주각 = 90°!
+                    <button onclick="sendQuickCheer('호의 길이는 원주각 크기에 정비례해! 🍕')" class="px-3 py-1 bg-slate-900 hover:bg-slate-800 border border-purple-500/40 rounded-lg text-xs text-purple-200 font-mono-code">
+                        🍕 호의 길이 = 원주각 정비례!
                     </button>
-                    <button onclick="sendQuickCheer('원에 내접하는 사각형 마주 보는 각의 합은 180°! 🛡️')" class="px-3 py-1 bg-slate-900 hover:bg-slate-800 border border-purple-500/40 rounded-lg text-xs text-purple-200 font-mono-code">
-                        🛡️ 내접 사각형 대각합 = 180°!
+                    <button onclick="sendQuickCheer('두 현의 교각은 두 원주각의 합(삼각형 외각)! 💡')" class="px-3 py-1 bg-slate-900 hover:bg-slate-800 border border-purple-500/40 rounded-lg text-xs text-purple-200 font-mono-code">
+                        💡 두 현 교각 = 외각 합!
                     </button>
                 </div>
 
@@ -394,7 +406,7 @@
             <div class="text-5xl mb-2">🪐</div>
             <h4 class="text-2xl md:text-3xl font-celestial text-purple-300 mb-1">4단계: 전술 반사 펄스 선택</h4>
             <p class="text-xs text-slate-300 mb-5">
-                원주각 방어 돔 전개 완료! 적의 공격을 튕겨내고 반격할 전술 펄스를 선택하세요!
+                원주각 방어 돔 전개 완료! 거대 메테오를 요격하고 상대 진영에 반사 펄스를 방출하세요!
             </p>
 
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
@@ -402,21 +414,21 @@
                 <button onclick="choosePayload('counter_beam')" class="group p-4 rounded-2xl bg-gradient-to-b from-indigo-950/90 to-slate-950 border-2 border-indigo-400 hover:border-amber-300 flex flex-col items-center gap-2 transition hover:scale-105 active:scale-95 shadow-xl">
                     <span class="text-4xl">⚡</span>
                     <span class="font-celestial text-base text-indigo-300">카운터 반사 빔</span>
-                    <span class="text-[11px] text-slate-300 leading-tight">외계 폭격을 튕겨내 반격<br><b class="text-amber-300">웨이브 즉시 방어 (+1점)</b></span>
+                    <span class="text-[11px] text-slate-300 leading-tight">메테오 완파 & 궤도 수호<br><b class="text-amber-300">웨이브 즉시 수호 (+1점)</b></span>
                 </button>
 
                 <!-- Tactical 2: Plasma Storm Pulse -->
                 <button onclick="choosePayload('plasma_storm')" class="group p-4 rounded-2xl bg-gradient-to-b from-purple-950/90 to-slate-950 border-2 border-purple-500 hover:border-amber-300 flex flex-col items-center gap-2 transition hover:scale-105 active:scale-95 shadow-xl">
                     <span class="text-4xl">🌪️</span>
                     <span class="font-celestial text-base text-purple-300">플라즈마 폭풍</span>
-                    <span class="text-[11px] text-slate-300 leading-tight">상대 돔 렌즈에 EMP 교란<br><b class="text-purple-300">방어 + 적 5회 정화</b></span>
+                    <span class="text-[11px] text-slate-300 leading-tight">상대 돔 렌즈에 EMP 교란<br><b class="text-purple-300">수호 + 적 5회 정화</b></span>
                 </button>
 
                 <!-- Tactical 3: Supernova Flare -->
                 <button onclick="choosePayload('supernova_flare')" class="group p-4 rounded-2xl bg-gradient-to-b from-amber-950/90 to-slate-950 border-2 border-amber-400 hover:border-white flex flex-col items-center gap-2 transition hover:scale-105 active:scale-95 shadow-xl">
                     <span class="text-4xl">✨</span>
                     <span class="font-celestial text-base text-amber-300">초신성 섬광탄</span>
-                    <span class="text-[11px] text-slate-300 leading-tight">광속 에너지로 즉각 수호<br><b class="text-amber-400">초고속 즉시 방어 (+1점)</b></span>
+                    <span class="text-[11px] text-slate-300 leading-tight">광속 에너지로 즉각 수호<br><b class="text-amber-400">초고속 즉시 수호 (+1점)</b></span>
                 </button>
             </div>
 
@@ -448,7 +460,7 @@
                 아틀라스 돔 5대 웨이브 전격 수호 대승리!
             </h3>
             <p id="victory-desc" class="text-xs md:text-sm text-purple-200 mb-5 leading-relaxed">
-                5대 성간 플라즈마 침공을 완벽한 원주각과 중심각, 90° 반원, 180° 내접 사각형 기하 연산으로 먼저 모두 수호했습니다!
+                45초 메테오 돌진의 압박을 이겨내고, 5단계 코스믹 기하 보스 레이드까지 완벽한 원주각 연산으로 먼저 격파했습니다!
             </p>
 
             <div class="bg-slate-950/80 border border-slate-700 rounded-2xl p-4 mb-6 text-left">
@@ -461,7 +473,7 @@
                 <div class="grid grid-cols-2 gap-2 text-center text-xs font-celestial border-t border-slate-800 pt-3">
                     <div class="bg-slate-900/80 p-2 rounded-xl">
                         <span class="text-slate-400 block text-[10px]">수호 결과</span>
-                        <span class="text-purple-300 text-sm">5 / 5 웨이브 방어</span>
+                        <span class="text-purple-300 text-sm">5 / 5 웨이브 방어 (보스 격퇴)</span>
                     </div>
                     <div class="bg-slate-900/80 p-2 rounded-xl">
                         <span class="text-slate-400 block text-[10px]">작전 수행 타임</span>
@@ -543,15 +555,20 @@
                 this.playTone(180, 'sawtooth', 0.2, 0.3);
                 setTimeout(() => this.playTone(130, 'sawtooth', 0.25, 0.3), 90);
             }
+            meteorImpactWarning() {
+                this.init();
+                this.playTone(220, 'sawtooth', 0.18, 0.3);
+                setTimeout(() => this.playTone(150, 'sawtooth', 0.25, 0.35), 100);
+            }
             victoryFanfare() {
                 this.init();
                 const notes = [
-                    { f: 523.25, d: 0.18 },
-                    { f: 659.25, d: 0.18 },
-                    { f: 783.99, d: 0.22 },
-                    { f: 1046.50, d: 0.5 },
-                    { f: 783.99, d: 0.18 },
-                    { f: 1046.50, d: 0.8 }
+                    { f: 587.33, d: 0.18 },
+                    { f: 739.99, d: 0.18 },
+                    { f: 880.00, d: 0.22 },
+                    { f: 1174.66, d: 0.5 },
+                    { f: 880.00, d: 0.18 },
+                    { f: 1174.66, d: 0.8 }
                 ];
                 let delay = 0;
                 notes.forEach(n => {
@@ -605,7 +622,8 @@
         const myJoinedAt = Date.now();
         let unsubscribeRoom = null;
         let lastKnownRoomData = null;
-        let heartbeatInterval = null;
+        let bc = null;
+        let lastPingSentTime = 0;
 
         let missionStartTime = Date.now();
         let prevWasMyTurn = false;
@@ -614,21 +632,28 @@
         let lockoutTimerInterval = null;
         const recentProblemsSet = new Set();
         let stormWipesRemaining = 5;
+        let lastRenderedStage = -1;
+        let lastRenderedWave = -1;
+
+        // Meteor real-time timer state (45-second countdown)
+        let meteorStartTime = Date.now();
+        const METEOR_LIMIT_MS = 45000;
+        let lastWarningSecond = -1;
 
         /*
-           5개 웨이브 기하학 원주각 정리 정의
-           Wave 1: 기본 중심각과 원주각 성질 (원주각 = 1/2 중심각, 중심각 = 2배)
-           Wave 2: 같은 호에 대한 원주각의 성질 (동일 호를 공유하는 원주각은 크기가 같다)
-           Wave 3: 반원에 대한 원주각 성질 (지름에 대한 원주각 = 90°)
-           Wave 4: 원에 내접하는 사각형의 성질 (마주 보는 대각의 합 = 180°)
-           Wave 5: 복합 기하 오리진 보스 (이등변삼각형 + 중심각/원주각 융합 복합각)
+           중3 기하 심화 5개 웨이브 기하학 원주각 정리 정의
+           Wave 1: 기본 중심각-원주각 2배 관계
+           Wave 2: 호의 길이 비례 법칙 (호의 길이는 원주각의 크기에 정비례: l1 : l2 = θ1 : θ2)
+           Wave 3: 지름(반원)의 원주각 = 90° 직각 돔
+           Wave 4: 두 현의 교각 (삼각형 외각 융합: x = θ1 + θ2)
+           Wave 5: [코스믹 보스 메테오 레이드] 내접 사각형 180° + 중심각/이등변 융합 복합 기하 약점 분석
         */
         const WAVE_CONFIGS = [
             { index: 1, name: "중심각-원주각 2배 법칙", theorem: "center_double", icon: "🌌" },
-            { index: 2, name: "동일 호의 원주각 보존", theorem: "same_arc", icon: "✨" },
+            { index: 2, name: "호의 길이 원주각 비례 법칙", theorem: "arc_ratio", icon: "🍕" },
             { index: 3, name: "지름 반원의 90° 직각 돔", theorem: "diameter_90", icon: "📐" },
-            { index: 4, name: "내접 사각형 180° 보각 장벽", theorem: "cyclic_180", icon: "🛡️" },
-            { index: 5, name: "복합 기하 코스믹 보스 메테오", theorem: "complex_boss", icon: "👾" }
+            { index: 4, name: "두 현의 교각 (삼각형 외각 융합)", theorem: "intersecting_chords", icon: "⚔️" },
+            { index: 5, name: "코스믹 기하 보스 메테오 레이드", theorem: "boss_raid", icon: "👾" }
         ];
 
         function generateInscribedMission(waveIndex = 1) {
@@ -639,81 +664,125 @@
             while (attempts < 150) {
                 attempts++;
                 let theoremType = waveInfo.theorem;
-                let centerAngle = 0;
-                let inscribedAngle = 0;
                 let targetAngle = 0;
                 let clue = "";
-                let propCorrectIndex = 0; // 0: 중심각 2배, 1: 반원 90도, 2: 내접 사각형 180도
+                let propChoices = [];
+                let propCorrectIndex = 0;
                 let intermediateChoices = [];
                 let intermediateCorrectIndex = 0;
+                let centerAngle = 0;
+                let inscribedAngle = 0;
+                let chordAngle1 = 0;
+                let chordAngle2 = 0;
+                let arcFractionText = "";
 
                 if (theoremType === "center_double") {
-                    // 원주각 = θ (25° ~ 75°), 중심각 = 2θ (50° ~ 150°)
-                    inscribedAngle = (Math.floor(Math.random() * 11) + 6) * 5; // 30, 35, 40 ... 80
+                    // 1. 기본 중심각 2배
+                    inscribedAngle = (Math.floor(Math.random() * 11) + 6) * 5; // 30° ~ 80°
                     centerAngle = inscribedAngle * 2;
+                    propChoices = ["중심각 = 2 × 원주각", "호의 길이 정비례", "반원의 원주각 = 90°"];
                     propCorrectIndex = 0;
 
                     if (Math.random() < 0.5) {
-                        // 주어진 값: 중심각, 구할 값: 원주각 θ
                         targetAngle = inscribedAngle;
-                        clue = `호 AB에 대한 [중심각 ∠AOB = ${centerAngle}°] 일 때, 에너지 돔 원주각 [∠APB = θ] 의 크기를 구하라!`;
-                        intermediateChoices = [`원주각 = ${centerAngle}° / 2`, `원주각 = ${centerAngle}° × 2`, `원주각 = 180° - ${centerAngle}°`, `원주각 = 90°`];
+                        clue = `호 AB에 대한 [중심각 ∠AOB = ${centerAngle}°] 일 때, 돔 원주각 [∠APB = θ] 의 각도를 구하라!`;
+                        intermediateChoices = [`원주각 θ = ${centerAngle}° / 2`, `원주각 θ = ${centerAngle}° × 2`, `원주각 θ = 180° - ${centerAngle}°`, `원주각 θ = 90°`];
                         intermediateCorrectIndex = 0;
                     } else {
-                        // 주어진 값: 원주각, 구할 값: 중심각 2θ
                         targetAngle = centerAngle;
-                        clue = `호 AB에 대한 [원주각 ∠APB = ${inscribedAngle}°] 일 때, 궤도 중심 코어 각도 [중심각 ∠AOB = θ] 의 크기를 구하라!`;
-                        intermediateChoices = [`중심각 = ${inscribedAngle}° × 2`, `중심각 = ${inscribedAngle}° / 2`, `중심각 = 360° - ${inscribedAngle}°`, `중심각 = 90°`];
+                        clue = `호 AB에 대한 [원주각 ∠APB = ${inscribedAngle}°] 일 때, 중심 코어 [중심각 ∠AOB = θ] 의 각도를 구하라!`;
+                        intermediateChoices = [`중심각 θ = ${inscribedAngle}° × 2`, `중심각 θ = ${inscribedAngle}° / 2`, `중심각 θ = 360° - ${inscribedAngle}°`, `중심각 θ = 90°`];
                         intermediateCorrectIndex = 0;
                     }
 
-                } else if (theoremType === "same_arc") {
-                    // 동일 호에 대한 두 원주각 ∠APB = ∠AQB
-                    const base = (Math.floor(Math.random() * 10) + 6) * 5; // 30° ~ 75°
-                    targetAngle = base;
-                    propCorrectIndex = 0; // 같은 호 원주각 성질
-                    clue = `같은 호 AB에 대한 원주각 [∠AQB = ${base}°] 일 때, 동일 궤도상의 다른 방어 원주각 [∠APB = θ] 의 크기를 구하라!`;
-                    intermediateChoices = [`같은 호의 원주각은 크기가 같다`, `원주각은 중심각의 1/2`, `반원의 원주각은 90°`, `대각의 합은 180°`];
+                } else if (theoremType === "arc_ratio") {
+                    // 2. 호의 길이 비례 법칙: 원 전체 둘레(원주각 총합 180°) 중 호가 차지하는 분수 비례
+                    const fractions = [
+                        { text: "1/6", num: 1, den: 6, deg: 30 },
+                        { text: "1/5", num: 1, den: 5, deg: 36 },
+                        { text: "1/4", num: 1, den: 4, deg: 45 },
+                        { text: "2/9", num: 2, den: 9, deg: 40 },
+                        { text: "1/3", num: 1, den: 3, deg: 60 }
+                    ];
+                    const selectedFrac = fractions[Math.floor(Math.random() * fractions.length)];
+                    arcFractionText = selectedFrac.text;
+                    targetAngle = selectedFrac.deg;
+
+                    propChoices = ["호의 길이와 원주각의 정비례 법칙", "반원의 원주각 = 90°", "내접 사각형 대각합 = 180°"];
+                    propCorrectIndex = 0;
+
+                    clue = `호 AB의 길이가 원 전체 둘레의 [ ${arcFractionText} ] 일 때, 호 AB에 대한 원주각 [∠APB = θ] 의 크기를 구하라!`;
+                    intermediateChoices = [
+                        `원주각 총합 180° × (${arcFractionText})`,
+                        `중심각 총합 360° × (${arcFractionText})`,
+                        `90° × (${arcFractionText})`,
+                        `180° - (${arcFractionText} × 100)`
+                    ];
                     intermediateCorrectIndex = 0;
 
                 } else if (theoremType === "diameter_90") {
-                    // 반원에 대한 원주각 = 90°, 삼각형 내각합 180° 이용
-                    // 선분 AB가 지름 -> ∠APB = 90°
+                    // 3. 지름 반원의 90° 직각 돔
                     const givenAngle = (Math.floor(Math.random() * 11) + 4) * 5; // 20° ~ 70°
-                    targetAngle = 90 - givenAngle; // 나머지 한 각
-                    propCorrectIndex = 1;
-                    clue = `선분 AB가 원의 [지름]이고 [∠PAB = ${givenAngle}°] 일 때, 직각삼각형 원주각 성질을 이용해 [∠PBA = θ] 의 크기를 구하라!`;
-                    intermediateChoices = [`지름(반원)의 원주각 ∠APB = 90°`, `중심각은 원주각의 2배`, `마주보는 대각합은 180°`, `접현각은 원주각과 같다`];
+                    targetAngle = 90 - givenAngle;
+
+                    propChoices = ["반원(지름)에 대한 원주각 = 90°", "호의 길이 정비례", "중심각 = 2 × 원주각"];
+                    propCorrectIndex = 0;
+
+                    clue = `선분 AB가 원의 [지름]이고 [∠PAB = ${givenAngle}°] 일 때, 직각 돔 성질을 이용해 [∠PBA = θ] 의 크기를 구하라!`;
+                    intermediateChoices = [
+                        `지름의 원주각 ∠APB = 90° 이므로 θ = 90° - ${givenAngle}°`,
+                        `중심각이 180° 이므로 θ = 180° - ${givenAngle}°`,
+                        `호의 길이가 같으므로 θ = ${givenAngle}°`,
+                        `대각의 합이 180° 이므로 θ = 180° - ${givenAngle}°`
+                    ];
                     intermediateCorrectIndex = 0;
 
-                } else if (theoremType === "cyclic_180") {
-                    // 원에 내접하는 사각형의 대각의 합 = 180°
-                    const oppAngle = (Math.floor(Math.random() * 14) + 12) * 5; // 60° ~ 125°
-                    targetAngle = 180 - oppAngle;
-                    propCorrectIndex = 2;
-                    clue = `원 O에 내접하는 사각형 ABCD에서 마주보는 [대각 ∠B = ${oppAngle}°] 일 때, 방어각 [∠D = θ] 의 크기를 구하라!`;
-                    intermediateChoices = [`내접 사각형 마주보는 대각합 = 180°`, `중심각은 원주각의 2배`, `지름의 원주각 = 90°`, `원주각은 항상 같다`];
+                } else if (theoremType === "intersecting_chords") {
+                    // 4. 두 현의 교각: 원 내부에서 교차하는 두 현 AC, BD의 교점 X. 삼각형 외각 성질로 x = ∠A + ∠B
+                    chordAngle1 = (Math.floor(Math.random() * 8) + 5) * 5; // 25° ~ 60°
+                    chordAngle2 = (Math.floor(Math.random() * 7) + 4) * 5; // 20° ~ 50°
+                    targetAngle = chordAngle1 + chordAngle2; // 교각 외각
+
+                    propChoices = ["두 현의 교각 = 삼각형 외각 융합 (두 원주각의 합)", "중심각 = 2 × 원주각", "지름 원주각 = 90°"];
+                    propCorrectIndex = 0;
+
+                    clue = `원 내부에서 두 현이 교차할 때 원주각 [∠A = ${chordAngle1}°], [∠B = ${chordAngle2}°] 이다. 삼각형 외각 성질을 이용해 두 현의 교각 [x = θ] 를 구하라!`;
+                    intermediateChoices = [
+                        `삼각형 외각 공식 : 교각 θ = ${chordAngle1}° + ${chordAngle2}°`,
+                        `교각 θ = 180° - (${chordAngle1}° + ${chordAngle2}°)`,
+                        `교각 θ = (${chordAngle1}° + ${chordAngle2}°) / 2`,
+                        `교각 θ = 2 × (${chordAngle1}° + ${chordAngle2}°)`
+                    ];
                     intermediateCorrectIndex = 0;
 
                 } else {
-                    // complex_boss: 중심각 2θ와 이등변삼각형(반지름 OA = OB) 융합
-                    // ∠AOB = 100° -> ∠APB = 50°, 또는 △OAB에서 밑각 = (180 - 2θ)/2
-                    const alpha = (Math.floor(Math.random() * 8) + 6) * 5; // 30, 35, 40, 45, 50 ... 65
+                    // 5. 👾 코스믹 기하 보스 레이드: 원에 내접하는 사각형 ABCD + 중심각 융합
+                    // 중심각 ∠AOC = 2α -> 원주각 ∠B = α -> 마주보는 대각 ∠D = 180° - α
+                    const alpha = (Math.floor(Math.random() * 7) + 10) * 5; // 50° ~ 80°
                     centerAngle = alpha * 2;
-                    targetAngle = (180 - centerAngle) / 2; // △OAB 밑각
+                    inscribedAngle = alpha;
+                    targetAngle = 180 - alpha; // 보스 약점 각도!
+
+                    propChoices = ["보스 약점: 중심각 2배 ➔ 내접 사각형 대각합 180° 복합 융합", "호의 길이 단순 정비례", "반원의 원주각 = 90°"];
                     propCorrectIndex = 0;
-                    clue = `[보스 침공] 원주각 [∠APB = ${alpha}°] 일 때, 반지름으로 만든 이등변삼각형 △OAB의 [밑각 ∠OAB = θ] 의 크기를 구하라!`;
-                    intermediateChoices = [`중심각 = ${centerAngle}°, 반지름 OA=OB`, `지름의 원주각은 90°`, `대각합은 180°`, `원주각은 일정`];
+
+                    clue = `[👾 코스믹 보스 레이드] 보스 쉴드 코어의 중심각 [∠AOC = ${centerAngle}°] 일 때, 원주각 ∠B를 거쳐 마주보는 보스 약점 각도 [∠D = θ] 를 도출하라!`;
+                    intermediateChoices = [
+                        `원주각 ∠B = ${centerAngle}°/2 = ${alpha}° ➔ 대각 θ = 180° - ${alpha}°`,
+                        `대각 θ = 180° - ${centerAngle}°`,
+                        `대각 θ = 360° - ${centerAngle}°`,
+                        `대각 θ = ${centerAngle}° / 2`
+                    ];
                     intermediateCorrectIndex = 0;
                 }
 
-                // Randomize intermediate choices
-                const originalCorrectText = intermediateChoices[intermediateCorrectIndex];
+                // Shuffle intermediate choices
+                const originalCorrect = intermediateChoices[intermediateCorrectIndex];
                 for (let i = intermediateChoices.length - 1; i > 0; i--) {
                     const j = Math.floor(Math.random() * (i + 1));
                     [intermediateChoices[i], intermediateChoices[j]] = [intermediateChoices[j], intermediateChoices[i]];
                 }
-                const newCorrectIndex = intermediateChoices.indexOf(originalCorrectText);
+                const newIntermediateCorrectIndex = intermediateChoices.indexOf(originalCorrect);
 
                 if (!recentProblemsSet.has(clue) || attempts > 120) {
                     recentProblemsSet.add(clue);
@@ -728,12 +797,16 @@
                         waveIcon: waveInfo.icon,
                         theoremType: theoremType,
                         clue: clue,
+                        propChoices: propChoices,
                         propCorrectIndex: propCorrectIndex,
                         intermediateChoices: intermediateChoices,
-                        intermediateCorrectIndex: newCorrectIndex,
+                        intermediateCorrectIndex: newIntermediateCorrectIndex,
                         targetAngle: targetAngle,
                         centerAngle: centerAngle || targetAngle * 2,
-                        inscribedAngle: inscribedAngle || targetAngle
+                        inscribedAngle: inscribedAngle || targetAngle,
+                        chordAngle1: chordAngle1,
+                        chordAngle2: chordAngle2,
+                        arcFractionText: arcFractionText
                     };
                     break;
                 }
@@ -745,9 +818,10 @@
                     waveName: "중심각-원주각 2배 법칙",
                     waveIcon: "🌌",
                     theoremType: "center_double",
-                    clue: "호 AB에 대한 [중심각 ∠AOB = 120°] 일 때, 에너지 돔 원주각 [∠APB = θ] 의 크기를 구하라!",
+                    clue: "호 AB에 대한 [중심각 ∠AOB = 120°] 일 때, 돔 원주각 [∠APB = θ] 의 각도를 구하라!",
+                    propChoices: ["중심각 = 2 × 원주각", "호의 길이 정비례", "반원의 원주각 = 90°"],
                     propCorrectIndex: 0,
-                    intermediateChoices: ["원주각 = 120° / 2", "원주각 = 120° × 2", "원주각 = 180° - 120°", "원주각 = 90°"],
+                    intermediateChoices: ["원주각 θ = 120° / 2", "원주각 θ = 120° × 2", "원주각 θ = 180° - 120°", "원주각 θ = 90°"],
                     intermediateCorrectIndex: 0,
                     targetAngle: 60,
                     centerAngle: 120,
@@ -855,6 +929,20 @@
 
             const myMemberObj = { id: myPlayerId, name: currentUserName, lastSeen: Date.now(), joinedAt: myJoinedAt };
 
+            try {
+                if (window.BroadcastChannel) {
+                    if (bc) bc.close();
+                    bc = new BroadcastChannel(`arc_origin_${currentRoomCode}`);
+                    bc.onmessage = (event) => {
+                        const msg = event.data;
+                        if (!msg) return;
+                        if (msg.type === 'LOCAL_PING' && msg.team === myTeam) {
+                            addCelestialPing(msg.x, msg.y, msg.sender);
+                        }
+                    };
+                }
+            } catch (e) {}
+
             document.getElementById('lobby-screen').classList.add('hidden');
             document.getElementById('battle-screen').classList.remove('hidden');
             initOrbitCanvas();
@@ -885,37 +973,10 @@
                 console.warn("Arc origin join error:", err);
             }
 
-            if (heartbeatInterval) clearInterval(heartbeatInterval);
-            heartbeatInterval = setInterval(sendHeartbeat, 3500);
+            // Zero periodic heartbeat to Firestore! Leave cleanup on exit only
             window.addEventListener('beforeunload', leaveRoomCleanup);
+            meteorStartTime = Date.now();
         };
-
-        async function sendHeartbeat() {
-            if (!currentRoomCode || !myTeam || !db) return;
-            try {
-                const roomRef = doc(db, 'arc_origin_rooms', currentRoomCode);
-                const snap = await getDoc(roomRef);
-                if (snap.exists()) {
-                    const data = snap.data();
-                    const listKey = myTeam === 'blue' ? 'blueMembers' : 'redMembers';
-                    let list = data[listKey] || [];
-                    let found = false;
-                    list = list.map(m => {
-                        if ((m.id || m.name) === myPlayerId) {
-                            found = true;
-                            return { ...m, lastSeen: Date.now() };
-                        }
-                        return m;
-                    });
-                    if (!found) {
-                        list.push({ id: myPlayerId, name: currentUserName, lastSeen: Date.now(), joinedAt: myJoinedAt });
-                    }
-                    data[listKey] = cleanMemberList(list);
-                    data.updatedAt = Date.now();
-                    await updateDoc(roomRef, { [listKey]: data[listKey], updatedAt: data.updatedAt });
-                }
-            } catch (e) {}
-        }
 
         async function leaveRoomCleanup() {
             if (!currentRoomCode || !myTeam || !db) return;
@@ -945,6 +1006,7 @@
                 }
             } catch (e) {}
             applyRoomState(fresh);
+            meteorStartTime = Date.now();
             showCustomModal("초기화 완료", "오리진 돔 수호 대원 명단과 웨이브 스코어가 깨끗하게 리셋되었습니다!");
         };
 
@@ -1034,11 +1096,11 @@
                         isBlueDone 
                             ? 'bg-indigo-950/80 border-indigo-400 text-indigo-300 shadow-[0_0_6px_#818cf8]' 
                             : (isBlueActive 
-                                ? 'bg-amber-950/80 border-amber-400 text-amber-300 animate-pulse' 
+                                ? (i === 4 ? 'bg-rose-950 border-2 border-rose-400 text-rose-300 animate-pulse font-bold' : 'bg-amber-950/80 border-amber-400 text-amber-300 animate-pulse') 
                                 : 'bg-slate-900/50 border-slate-800 text-slate-600')
                     }">
                         <span class="text-xs">${wave.icon}</span>
-                        <span class="text-[9px] truncate w-full">${wave.index}단계</span>
+                        <span class="text-[9px] truncate w-full">${i === 4 ? '보스전' : `${wave.index}단계`}</span>
                     </div>
                 `;
 
@@ -1050,11 +1112,11 @@
                         isRedDone 
                             ? 'bg-rose-950/80 border-rose-400 text-rose-300 shadow-[0_0_6px_#fb7185]' 
                             : (isRedActive 
-                                ? 'bg-amber-950/80 border-amber-400 text-amber-300 animate-pulse' 
+                                ? (i === 4 ? 'bg-rose-950 border-2 border-rose-400 text-rose-300 animate-pulse font-bold' : 'bg-amber-950/80 border-amber-400 text-amber-300 animate-pulse') 
                                 : 'bg-slate-900/50 border-slate-800 text-slate-600')
                     }">
                         <span class="text-xs">${wave.icon}</span>
-                        <span class="text-[9px] truncate w-full">${wave.index}단계</span>
+                        <span class="text-[9px] truncate w-full">${i === 4 ? '보스전' : `${wave.index}단계`}</span>
                     </div>
                 `;
             }
@@ -1081,18 +1143,18 @@
             const slotAngle = document.getElementById('slot-angle');
 
             if (currentStage >= 1) {
-                slotArc.innerHTML = `<span class="text-indigo-300 font-bold">호 AB 공유 확인</span>`;
+                slotArc.innerHTML = `<span class="text-indigo-300 font-bold">기하 법칙 판별 확정</span>`;
                 slotArc.className = "px-2.5 py-1 rounded bg-indigo-950/80 border border-indigo-400 text-indigo-300 font-bold shadow-[0_0_8px_#818cf8]";
             } else {
-                slotArc.innerText = "공유 호 AB 식별";
+                slotArc.innerText = "기하 법칙 식별";
                 slotArc.className = "px-2.5 py-1 rounded bg-slate-800 border border-slate-600 text-slate-400 font-bold";
             }
 
             if (currentStage >= 2) {
-                slotTheorem.innerHTML = `<span class="text-amber-300 font-bold">기하 정리 위상 연계 완료</span>`;
+                slotTheorem.innerHTML = `<span class="text-amber-300 font-bold">위상 연계 수식 연립 완료</span>`;
                 slotTheorem.className = "px-2.5 py-1 rounded bg-amber-950/80 border border-amber-400 text-amber-300 font-bold shadow-[0_0_8px_#f59e0b]";
             } else {
-                slotTheorem.innerText = "기하 법칙 (2배/90°/180°)";
+                slotTheorem.innerText = "위상 연계 수식";
                 slotTheorem.className = "px-2.5 py-1 rounded bg-slate-800 border border-slate-600 text-slate-400 font-bold";
             }
 
@@ -1145,14 +1207,18 @@
             const currentActorEl = document.getElementById('current-actor-name');
             const stepNumInput = document.getElementById('step-number-input');
 
+            const isStageChanged = (lastRenderedStage !== currentStage || lastRenderedWave !== waveNum);
+            lastRenderedStage = currentStage;
+            lastRenderedWave = waveNum;
+
             if (currentStage === 0) {
-                instEl.innerText = "【1단계: 기하 법칙 판별관】 주어진 조건을 보고 적용해야 할 핵심 원주각 정리(중심각 2배 / 반원 90° / 내접사각형 180°)를 선택하세요!";
+                instEl.innerText = "【1단계: 기하 법칙 판별관】 주어진 힌트에서 적용해야 할 핵심 원주각 법칙을 판별하여 선택하세요!";
             } else if (currentStage === 1) {
                 instEl.innerText = "【2단계: 위상 연계 분석사】 각도를 계산하기 위한 올바른 수학적 관계식 보기를 선택하세요!";
             } else if (currentStage === 2) {
                 instEl.innerText = "【3단계: 방어 각도 도출사】 기하 정리를 적용하여 방어막 각도 [θ] 의 정수 숫자 값을 계산해 입력하세요!";
             } else if (currentStage === 3) {
-                instEl.innerText = "【4단계: 오리진 돔 격발관】 돔 위상 100% 동기화 완료! 전술 펄스를 선택해 적의 외계 공격을 튕겨내세요!";
+                instEl.innerText = "【4단계: 오리진 돔 격발관】 돔 위상 100% 동기화 완료! 전술 펄스를 선택해 메테오를 요격하세요!";
             }
 
             if (isMyTurn) {
@@ -1162,6 +1228,10 @@
                     numControl.classList.add('hidden');
                     fireControl.classList.add('hidden');
                     propControl.classList.remove('hidden');
+                    (currentMission.propChoices || []).forEach((pText, pIdx) => {
+                        const btn = document.getElementById(`prop-btn-${pIdx}`);
+                        if (btn) btn.innerText = pText;
+                    });
                 } else if (currentStage === 1) {
                     propControl.classList.add('hidden');
                     numControl.classList.add('hidden');
@@ -1177,9 +1247,11 @@
                     fireControl.classList.add('hidden');
                     numControl.classList.remove('hidden');
                     stepNumInput.disabled = false;
-                    stepNumInput.value = '';
+                    if (isStageChanged) {
+                        stepNumInput.value = '';
+                        stepNumInput.focus();
+                    }
                     stepNumInput.placeholder = "각도 θ 값 (°)";
-                    stepNumInput.focus();
                 } else {
                     propControl.classList.add('hidden');
                     choiceControl.classList.add('hidden');
@@ -1213,7 +1285,7 @@
                                   <div class="text-[11px] mt-1 ${isThisMine ? 'text-amber-300 font-bold' : 'text-slate-400'}">담당: ${stageActorName}${isThisMine ? ' (나)' : ''}</div>`;
 
                 if (s === currentStage) {
-                    card.className = "p-2.5 rounded-xl border-2 transition-all bg-amber-400/20 border-amber-300 text-amber-300 font-bold animate-pulse shadow-lg";
+                    card.className = "p-2.5 rounded-xl border-2 transition-all bg-amber-400/20 border-amber-300 text-yellow-300 font-bold animate-pulse shadow-lg";
                 } else if (s < currentStage) {
                     card.className = "p-2.5 rounded-xl border transition-all bg-purple-950/60 border-purple-500/60 text-purple-300 font-semibold";
                 } else {
@@ -1237,11 +1309,11 @@
                 if (myTeam === 'blue') nextData.blueStage = 1;
                 else nextData.redStage = 1;
 
-                showStepFeedback("✨ [기하 정리 판별 완료!] 호와 각도의 위상 관계를 확정했습니다! 2번 대원 위상 연계 개시!", false);
+                showStepFeedback("✨ [기하 법칙 판별 완료!] 위상 연계 수식을 유도합니다! 2번 대원 분석 개시!", false);
                 nextData.updatedAt = Date.now();
                 await syncStateUpdate(nextData);
             } else {
-                showStepFeedback("❌ 기하 정리 판별 오류! (중심각 2배, 반원 90°, 내접 사각형 180° 조건을 다시 확인하세요. 5초 위상 정렬)", true);
+                showStepFeedback("❌ 기하 법칙 판별 오류! 힌트의 호와 각도 관계를 다시 점검하세요. (5초 위상 정렬)", true);
                 triggerLockoutPenalty();
             }
         };
@@ -1274,7 +1346,8 @@
             if (isLockedOut) return;
             if (!lastKnownRoomData) return;
             const inputEl = document.getElementById('step-number-input');
-            const val = parseFloat(inputEl.value.trim());
+            const sanitized = inputEl.value.trim().replace(/[^0-9.-]/g, '');
+            const val = parseFloat(sanitized);
 
             if (isNaN(val)) {
                 showStepFeedback("각도 숫자를 입력해 주세요!", true);
@@ -1298,7 +1371,7 @@
                 nextData.updatedAt = Date.now();
                 await syncStateUpdate(nextData);
             } else {
-                showStepFeedback("❌ 각도 계산 오류! 사칙연산과 내각의 합을 재검토하세요. (5초 위상 정렬)", true);
+                showStepFeedback("❌ 각도 계산 오류! 사칙연산과 비례식을 재검토하세요. (5초 위상 정렬)", true);
                 triggerLockoutPenalty();
             }
         };
@@ -1331,7 +1404,7 @@
                 nextData.stormId = Date.now();
                 showStepFeedback(`🌪️ [${mission.waveName}] 수호 성공! 적 돔에 플라즈마 폭풍 EMP 살포!`, false);
             } else {
-                showStepFeedback(`⚡ [${mission.waveName}] 오리진 돔 완전 방어 성공! 반사 카운터 빔 방출!`, false);
+                showStepFeedback(`⚡ [${mission.waveName}] 오리진 돔 완전 방어 성공! 메테오 파쇄 카운터 빔 방출!`, false);
             }
 
             setTimeout(async () => {
@@ -1350,6 +1423,7 @@
                     hitData.redMission = generateInscribedMission(nextWaveNum);
                 }
 
+                meteorStartTime = Date.now(); // Reset 45s descent timer for next wave!
                 sfx.beamReflect();
                 hitData.updatedAt = Date.now();
                 await syncStateUpdate(hitData);
@@ -1406,7 +1480,7 @@
             const rawMembers = isBlueWin ? roomData.blueMembers : roomData.redMembers;
             const members = (rawMembers || []).map(m => m.name || m);
 
-            document.getElementById('victory-team-title').innerText = `${winnerName} 5대 웨이브 전격 수호 대승리!`;
+            document.getElementById('victory-team-title').innerText = `${winnerName} 코스믹 보스 격퇴 대승리!`;
             document.getElementById('victory-members-list').innerText = members.length > 0 ? members.join(', ') : '단독 가디언';
             document.getElementById('victory-total-time').innerText = `${((Date.now() - missionStartTime) / 1000).toFixed(1)}초`;
 
@@ -1415,6 +1489,9 @@
             }, 1000);
         }
 
+        // ==========================================
+        // 🚀 CELESTIAL ORBIT & METEOR 2D CANVAS ENGINE
+        // ==========================================
         let canvas, ctx;
         let celestialPings = [];
         let reflectRays = [];
@@ -1455,7 +1532,15 @@
             sfx.celestialPing();
             addCelestialPing(cx, cy, currentUserName || '수호관');
 
-            if (lastKnownRoomData) {
+            if (bc) {
+                try {
+                    bc.postMessage({ type: 'LOCAL_PING', team: myTeam, x: Math.round(cx), y: Math.round(cy), sender: currentUserName || '수호관' });
+                } catch (e) {}
+            }
+
+            const now = Date.now();
+            if (now - lastPingSentTime > 2500 && lastKnownRoomData) {
+                lastPingSentTime = now;
                 const pingData = { ...lastKnownRoomData };
                 pingData.lastPing = {
                     team: myTeam,
@@ -1483,7 +1568,6 @@
             const midX = canvas.width / 2;
             const midY = canvas.height / 2;
             
-            // Expand energy shockwave along the planetary circle
             domeShockwaves.push({
                 x: midX,
                 y: midY,
@@ -1493,7 +1577,6 @@
                 alpha: 1
             });
 
-            // Reflected laser ray toward incoming meteor
             reflectRays.push({
                 startX: midX,
                 startY: midY,
@@ -1520,7 +1603,6 @@
 
         function triggerReflectEvent(reflectData) {
             if (reflectData.fromTeam !== myTeam) {
-                // Opponent reflected their wave! Flash opposing celestial constellation
                 domeShockwaves.push({
                     x: canvas.width * 0.85,
                     y: canvas.height * 0.25,
@@ -1558,7 +1640,34 @@
                 ctx.fillRect(sx, sy, sz, sz);
             }
 
-            // 2. Giant Planetary Orbit Circle (The Arc Origin Sphere)
+            // 2. Real-Time Meteor Descent Dynamics (45s Timer)
+            const elapsed = Date.now() - meteorStartTime;
+            const remainingMs = Math.max(0, METEOR_LIMIT_MS - elapsed);
+            const remainingSec = (remainingMs / 1000).toFixed(1);
+
+            const timerHudEl = document.getElementById('meteor-timer-text');
+            const timerCanvasEl = document.getElementById('canvas-meteor-timer');
+            if (timerHudEl) timerHudEl.innerText = `${remainingSec}s`;
+            if (timerCanvasEl) timerCanvasEl.innerText = `${remainingSec}초`;
+
+            // Sound warning when timer < 10 seconds
+            const currentIntSec = Math.floor(remainingMs / 1000);
+            if (currentIntSec <= 10 && currentIntSec > 0 && currentIntSec !== lastWarningSecond) {
+                lastWarningSecond = currentIntSec;
+                sfx.meteorImpactWarning();
+            }
+
+            // If time runs out, meteor shockwave resets the timer
+            if (remainingMs <= 0 && !battleEnded) {
+                meteorStartTime = Date.now();
+                sfx.error();
+                showStepFeedback("⚠️ 메테오 대기권 돌파 충돌! 쉴드 과열로 비상 냉각 가동! (타이머 재설정)", true);
+                triggerLockoutPenalty();
+            }
+
+            const meteorProgress = Math.min(1, elapsed / METEOR_LIMIT_MS);
+
+            // 3. Giant Planetary Orbit Circle (The Arc Origin Sphere)
             ctx.save();
             ctx.strokeStyle = 'rgba(129, 140, 248, 0.35)';
             ctx.lineWidth = 2;
@@ -1568,7 +1677,7 @@
             ctx.arc(midX, midY, orbitRadius, 0, Math.PI * 2);
             ctx.stroke();
 
-            // Outer Celestial Coordinate Compass Ring
+            // Outer Celestial Compass Ring
             ctx.strokeStyle = 'rgba(192, 132, 252, 0.2)';
             ctx.lineWidth = 1;
             ctx.setLineDash([6, 8]);
@@ -1578,7 +1687,7 @@
             ctx.setLineDash([]);
             ctx.restore();
 
-            // 3. Central Planetary Core (Center O)
+            // 4. Central Planetary Core (Center O)
             ctx.save();
             ctx.fillStyle = '#1e1b4b';
             ctx.strokeStyle = '#c084fc';
@@ -1597,17 +1706,18 @@
             ctx.fillText("O", midX, midY);
             ctx.restore();
 
-            // 4. Render Active Geometric Constellation & Inscribed Angle Theodolite
+            // 5. Render Active Geometric Constellation & Incoming Descending Meteor
             if (lastKnownRoomData) {
                 const mission = myTeam === 'blue' ? lastKnownRoomData.blueMission : lastKnownRoomData.redMission;
                 const currentStage = myTeam === 'blue' ? (lastKnownRoomData.blueStage || 0) : (lastKnownRoomData.redStage || 0);
                 drawGeometricCelestialConstellation(midX, midY, orbitRadius, mission, currentStage);
+                drawIncomingMeteor(midX, midY, orbitRadius, meteorProgress, mission);
             }
 
-            // 5. Draw Opponent PiP Mini Orbit Radar (Top Right)
+            // 6. Draw Opponent PiP Mini Orbit Radar (Top Right)
             drawOpponentMiniOrbit(w - 135, 45);
 
-            // 6. Dome Shockwaves & Particle Deflections
+            // 7. Dome Shockwaves & Particle Deflections
             for (let i = domeShockwaves.length - 1; i >= 0; i--) {
                 const sw = domeShockwaves[i];
                 sw.radius += 5.5;
@@ -1691,18 +1801,95 @@
             requestAnimationFrame(renderOrbitLoop);
         }
 
+        // Draw the real-time falling cosmic meteor approaching planetary core
+        function drawIncomingMeteor(cx, cy, R, progress, mission) {
+            if (!mission) return;
+            const isBoss = (mission.waveIndex === 5);
+            const meteorAngle = -Math.PI * 0.35; // Drops from top-right towards center
+            
+            // Descent distance: starts at R * 2.1 down to R (barrier perimeter)
+            const currentDist = (R * 2.1) - progress * (R * 1.1);
+            const mx = cx + Math.cos(meteorAngle) * currentDist;
+            const my = cy + Math.sin(meteorAngle) * currentDist;
+
+            ctx.save();
+            ctx.translate(mx, my);
+
+            // Fiery tail particles
+            for (let t = 0; t < 2; t++) {
+                celestialSparks.push({
+                    x: mx + (Math.random() - 0.5) * 12,
+                    y: my + (Math.random() - 0.5) * 12,
+                    vx: Math.cos(meteorAngle + Math.PI) * (Math.random() * 4 + 2),
+                    vy: Math.sin(meteorAngle + Math.PI) * (Math.random() * 4 + 2),
+                    radius: Math.random() * (isBoss ? 5 : 3) + 1.5,
+                    color: isBoss ? '#f43f5e' : '#f59e0b',
+                    alpha: 0.8
+                });
+            }
+
+            if (isBoss) {
+                // 👾 Giant Cosmic Boss Meteor
+                const bossPulse = 1 + Math.sin(Date.now() / 180) * 0.08;
+                ctx.scale(bossPulse, bossPulse);
+
+                // Dark Nebula Aura
+                ctx.fillStyle = 'rgba(225, 29, 72, 0.35)';
+                ctx.shadowBlur = 30;
+                ctx.shadowColor = '#f43f5e';
+                ctx.beginPath();
+                ctx.arc(0, 0, 32, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Rotating Boss Geometric Rune Ring
+                ctx.strokeStyle = '#facc15';
+                ctx.lineWidth = 2;
+                ctx.save();
+                ctx.rotate(Date.now() / 400);
+                ctx.strokeRect(-22, -22, 44, 44);
+                ctx.restore();
+
+                // Boss Core Skull
+                ctx.font = '28px sans-serif';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText("👾", 0, 0);
+
+                ctx.font = 'bold 11px "Cinzel", sans-serif';
+                ctx.fillStyle = '#fca5a5';
+                ctx.fillText("코스믹 보스 메테오", 0, -38);
+            } else {
+                // Regular Meteor
+                ctx.fillStyle = '#ea580c';
+                ctx.shadowBlur = 18;
+                ctx.shadowColor = '#f97316';
+                ctx.beginPath();
+                ctx.arc(0, 0, 16, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.font = '20px sans-serif';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText("☄️", 0, 0);
+
+                ctx.font = 'bold 10px "JetBrains Mono", monospace';
+                ctx.fillStyle = '#fed7aa';
+                ctx.fillText(`WAVE #${mission.waveIndex}`, 0, -22);
+            }
+
+            ctx.restore();
+        }
+
         function drawGeometricCelestialConstellation(cx, cy, R, mission, currentStage) {
             if (!mission) return;
             const tType = mission.theoremType;
 
-            // Define points on the circle
-            // Arc AB is at the bottom: A (left bottom), B (right bottom)
+            // Geometry Points
             let angA = Math.PI * 0.75;
             let angB = Math.PI * 0.25;
-            let angP = -Math.PI * 0.5; // Top apex for inscribed angle
+            let angP = -Math.PI * 0.5;
 
             if (tType === "diameter_90") {
-                // AB is diameter: straight horizontal line through center O
                 angA = Math.PI;
                 angB = 0;
                 angP = -Math.PI * 0.6;
@@ -1726,10 +1913,11 @@
             // Label Arc AB
             ctx.font = 'bold 11px "JetBrains Mono", monospace';
             ctx.fillStyle = '#fef08a';
-            ctx.fillText("호 AB", cx, cy + R + 18);
+            const arcLabel = mission.arcFractionText ? `호 AB (${mission.arcFractionText} 원둘레)` : "호 AB";
+            ctx.fillText(arcLabel, cx, cy + R + 18);
 
-            // 2. Stage 0: Center Angle Lines OA, OB
-            if (tType !== "diameter_90" && tType !== "cyclic_180") {
+            // 2. Stage 0: Geometric lines according to theorem
+            if (tType === "center_double" || tType === "arc_ratio") {
                 ctx.strokeStyle = currentStage >= 1 ? '#818cf8' : 'rgba(129, 140, 248, 0.4)';
                 ctx.lineWidth = 2;
                 ctx.setLineDash([4, 4]);
@@ -1750,9 +1938,12 @@
 
                 ctx.font = 'bold 11px "JetBrains Mono", monospace';
                 ctx.fillStyle = '#a5b4fc';
-                ctx.fillText(`2θ = ${mission.centerAngle}°`, cx, cy + 34);
+                if (tType === "center_double") {
+                    ctx.fillText(`2θ = ${mission.centerAngle}°`, cx, cy + 34);
+                } else {
+                    ctx.fillText(`호 비례 = ${mission.arcFractionText}`, cx, cy + 34);
+                }
             } else if (tType === "diameter_90") {
-                // Draw solid Diameter AB
                 ctx.strokeStyle = '#38bdf8';
                 ctx.lineWidth = 2.5;
                 ctx.beginPath();
@@ -1762,15 +1953,34 @@
 
                 ctx.font = 'bold 11px "JetBrains Mono", monospace';
                 ctx.fillStyle = '#7dd3fc';
-                ctx.fillText("지름 AB", cx, cy - 14);
-            } else if (tType === "cyclic_180") {
-                // 4 points on circle for cyclic quad: A, B, C, D
-                const angC = -Math.PI * 0.15;
-                const angD = -Math.PI * 0.85;
-                const ptC = { x: cx + Math.cos(angC) * R, y: cy + Math.sin(angC) * R };
-                const ptD = { x: cx + Math.cos(angD) * R, y: cy + Math.sin(angD) * R };
+                ctx.fillText("지름 AB (90° 돔)", cx, cy - 14);
+            } else if (tType === "intersecting_chords") {
+                // Two chords intersecting inside circle at X
+                const ptC = { x: cx + Math.cos(Math.PI * 0.95) * R, y: cy + Math.sin(Math.PI * 0.95) * R };
+                const ptD = { x: cx + Math.cos(Math.PI * 0.05) * R, y: cy + Math.sin(Math.PI * 0.05) * R };
+                const ptTopA = { x: cx + Math.cos(-Math.PI * 0.7) * R, y: cy + Math.sin(-Math.PI * 0.7) * R };
+                const ptTopB = { x: cx + Math.cos(-Math.PI * 0.3) * R, y: cy + Math.sin(-Math.PI * 0.3) * R };
 
                 ctx.strokeStyle = '#c084fc';
+                ctx.lineWidth = 2.5;
+                ctx.beginPath();
+                ctx.moveTo(ptTopA.x, ptTopA.y);
+                ctx.lineTo(ptD.x, ptD.y);
+                ctx.moveTo(ptTopB.x, ptTopB.y);
+                ctx.lineTo(ptC.x, ptC.y);
+                ctx.stroke();
+
+                // Intersect point X in center
+                drawConstellationPoint(cx, cy - 10, "X (교점)");
+                ctx.font = 'bold 11px "JetBrains Mono", monospace';
+                ctx.fillStyle = '#fde047';
+                ctx.fillText(`교각 x = ${currentStage >= 3 ? mission.targetAngle + '°' : '?'}`, cx, cy - 28);
+            } else if (tType === "boss_raid") {
+                // 5. Boss Wave: Cyclic Quad ABCD + Center Core Lines
+                const ptC = { x: cx + Math.cos(-Math.PI * 0.15) * R, y: cy + Math.sin(-Math.PI * 0.15) * R };
+                const ptD = { x: cx + Math.cos(-Math.PI * 0.85) * R, y: cy + Math.sin(-Math.PI * 0.85) * R };
+
+                ctx.strokeStyle = '#f43f5e';
                 ctx.lineWidth = 2.5;
                 ctx.beginPath();
                 ctx.moveTo(ptA.x, ptA.y);
@@ -1780,13 +1990,24 @@
                 ctx.closePath();
                 ctx.stroke();
 
-                // Points & Labels
+                // Center Angle lines
+                ctx.strokeStyle = 'rgba(250, 204, 21, 0.6)';
+                ctx.lineWidth = 1.5;
+                ctx.setLineDash([4, 4]);
+                ctx.beginPath();
+                ctx.moveTo(cx, cy);
+                ctx.lineTo(ptA.x, ptA.y);
+                ctx.moveTo(cx, cy);
+                ctx.lineTo(ptC.x, ptC.y);
+                ctx.stroke();
+                ctx.setLineDash([]);
+
                 drawConstellationPoint(ptC.x, ptC.y, "C");
-                drawConstellationPoint(ptD.x, ptD.y, "D");
+                drawConstellationPoint(ptD.x, ptD.y, "D (보스약점)");
             }
 
             // 3. Stage 1 & 2: Inscribed Angle Lines PA, PB
-            if (tType !== "cyclic_180") {
+            if (tType !== "intersecting_chords" && tType !== "boss_raid") {
                 ctx.strokeStyle = currentStage >= 2 ? '#c084fc' : 'rgba(192, 132, 252, 0.4)';
                 ctx.lineWidth = 2.5;
                 ctx.beginPath();
@@ -1796,17 +2017,14 @@
                 ctx.lineTo(ptB.x, ptB.y);
                 ctx.stroke();
 
-                // If diameter_90, draw right angle symbol at P
                 if (tType === "diameter_90") {
                     ctx.strokeStyle = '#facc15';
                     ctx.lineWidth = 2;
-                    // Right angle marker
                     ctx.strokeRect(ptP.x - 6, ptP.y + 2, 12, 12);
                     ctx.font = 'bold 12px "Orbitron", sans-serif';
                     ctx.fillStyle = '#fef08a';
                     ctx.fillText("90°", ptP.x, ptP.y - 14);
                 } else {
-                    // Inscribed angle arc
                     ctx.strokeStyle = '#c084fc';
                     ctx.lineWidth = 2;
                     ctx.beginPath();
@@ -1817,11 +2035,9 @@
                     ctx.fillStyle = '#f5d0fe';
                     ctx.fillText(`θ = ${currentStage >= 3 ? mission.targetAngle + '°' : '?'}`, ptP.x, ptP.y - 14);
                 }
-
                 drawConstellationPoint(ptP.x, ptP.y, "P");
             }
 
-            // Draw Base Points A and B
             drawConstellationPoint(ptA.x, ptA.y, "A");
             drawConstellationPoint(ptB.x, ptB.y, "B");
 
