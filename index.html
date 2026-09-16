@@ -70,14 +70,6 @@
         .astral-title-text {
             text-shadow: 0 0 14px rgba(192, 132, 252, 0.8), 0 0 30px rgba(99, 102, 241, 0.5);
         }
-
-        @keyframes bossPulse {
-            0%, 100% { filter: drop-shadow(0 0 20px rgba(239, 68, 68, 0.8)); transform: scale(1); }
-            50% { filter: drop-shadow(0 0 40px rgba(245, 158, 11, 1)); transform: scale(1.05); }
-        }
-        .boss-aura {
-            animation: bossPulse 1.8s infinite ease-in-out;
-        }
     </style>
 </head>
 <body class="celestial-space-bg text-white min-h-screen flex flex-col justify-between p-2 md:p-5 select-none relative overflow-x-hidden">
@@ -168,7 +160,7 @@
 
             <!-- Lobby Reset Button -->
             <div class="flex justify-center mb-4">
-                <button onclick="resetCurrentRoomData()" class="px-4 py-2 bg-rose-950/90 hover:bg-rose-900 border border-rose-500/70 rounded-xl text-xs text-rose-300 font-bold transition flex items-center gap-2 shadow font-mono-code">
+                <button onclick="resetCurrentRoomData()" class="px-4 py-2 bg-rose-950/90 hover:bg-rose-900 border border-rose-500/70 rounded-xl text-xs text-rose-300 font-bold transition flex items-center gap-2 shadow font-mono-code active:scale-95">
                     <span>🧹</span><span>로비 수호 대원 명단 초기화 (유령 정리)</span>
                 </button>
             </div>
@@ -177,8 +169,8 @@
                 성단을 선택하면 성간 기하 궤도를 동기화하고 5대 메테오 요격 구역으로 진입합니다!
             </div>
             
-            <div class="mt-5 text-center text-xs text-indigo-300 font-mono-code font-bold">
-                🔥 클라우드 DB 연결 상태: <span id="db-status-badge">확인 중...</span>
+            <div class="mt-5 text-center text-xs text-teal-300 font-mono-code font-bold">
+                🔥 클라우드 DB 연결 상태: <span id="db-status-badge">인증 및 연결 준비 중...</span>
             </div>
         </div>
 
@@ -198,7 +190,7 @@
 
             <!-- 5-Wave Defense Scoreboard HUD (Blue vs Red) -->
             <div class="grid grid-cols-1 md:grid-cols-2 gap-3 bg-slate-950/90 p-3.5 rounded-2xl border border-slate-800 shadow-xl hud-astral-corner">
-                <!-- Blue Team Status -->
+                <!-- Blue Team 5-Wave Status -->
                 <div class="flex flex-col gap-2 p-3 rounded-xl bg-indigo-950/40 border-2 border-indigo-500/60">
                     <div class="flex justify-between items-center text-sm font-bold">
                         <span class="text-indigo-300 font-celestial text-base md:text-lg flex items-center gap-2">
@@ -214,7 +206,7 @@
                     <div id="blue-members" class="text-xs text-indigo-200 font-mono-code truncate">수호대: 대기 중...</div>
                 </div>
 
-                <!-- Red Team Status -->
+                <!-- Red Team 5-Wave Status -->
                 <div class="flex flex-col gap-2 p-3 rounded-xl bg-rose-950/40 border-2 border-amber-500/60">
                     <div class="flex justify-between items-center text-sm font-bold">
                         <span class="text-amber-300 font-celestial text-base md:text-lg flex items-center gap-2">
@@ -333,7 +325,7 @@
                         <div class="flex items-center justify-between border-b border-purple-500/40 pb-2 mb-3">
                             <span class="text-xs font-mono-code text-purple-300 font-bold flex items-center gap-2">
                                 <span class="w-2.5 h-2.5 rounded-full bg-rose-500 animate-ping"></span>
-                                <span>ON-AIR // 대형 스크린 실시간 중계석</span>
+                                <span>ON-AIR // 대형 스크린 실시간 공식 중계석</span>
                             </span>
                             <span class="text-[11px] font-celestial text-yellow-300">교사 화면: 학생 턴 미개입</span>
                         </div>
@@ -399,7 +391,6 @@
 
                     <!-- Step 3 Fire Button (Opens Payload Modal) -->
                     <div id="fire-dome-control" class="hidden flex flex-col items-center gap-2 w-full max-w-md">
-                        <!-- ★ 연타 방지 가드 적용: id="fire-action-btn" 추가 -->
                         <button id="fire-action-btn" onclick="openDomeModal()" class="w-full py-4 bg-gradient-to-r from-purple-500 via-indigo-600 to-amber-400 hover:from-purple-400 hover:to-indigo-500 text-slate-950 font-celestial text-xl md:text-2xl rounded-2xl shadow-xl border-2 border-white active:scale-95 transition animate-pulse flex items-center justify-center gap-2">
                             <span>🛡️</span><span>에너지 돔 전개 & 메테오 요격! (DEFEND & REFLECT! ⚡)</span>
                         </button>
@@ -631,40 +622,63 @@
     <!-- Main Game Logic and Firebase Synchronizer -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { initializeFirestore, memoryLocalCache, doc, getDoc, setDoc, updateDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, getDoc, setDoc, updateDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        const firebaseConfig = {
-            apiKey: "AIzaSyChxrOzoTxFMy_BvkvNZLXAp1oRvN7Fb1g",
-            authDomain: "focus-tower-defense.firebaseapp.com",
-            projectId: "focus-tower-defense",
-            storageBucket: "focus-tower-defense.firebasestorage.app",
-            messagingSenderId: "519329169002",
-            appId: "1:519329169002:web:401534fe04b6ad39131413",
-            measurementId: "G-G2JRKQ2KXY"
-        };
+        // Environment variables
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'arc-origin-app';
+        const firebaseConfig = typeof __firebase_config !== 'undefined'
+            ? JSON.parse(__firebase_config)
+            : {
+                apiKey: "AIzaSyChxrOzoTxFMy_BvkvNZLXAp1oRvN7Fb1g",
+                authDomain: "focus-tower-defense.firebaseapp.com",
+                projectId: "focus-tower-defense",
+                storageBucket: "focus-tower-defense.firebasestorage.app",
+                messagingSenderId: "519329169002",
+                appId: "1:519329169002:web:401534fe04b6ad39131413",
+                measurementId: "G-G2JRKQ2KXY"
+            };
 
         let db = null;
-        let useFallback = false;
+        let auth = null;
+        let currentUser = null;
 
         try {
             const app = initializeApp(firebaseConfig);
-            db = initializeFirestore(app, {
-                localCache: memoryLocalCache()
-            });
-
-            const badge = document.getElementById('db-status-badge');
-            if (badge) {
-                badge.innerText = "🟢 클라우드 DB 정상 연결!";
-                badge.className = "text-purple-400 font-bold font-mono-code";
-            }
+            auth = getAuth(app);
+            db = getFirestore(app);
         } catch (e) {
-            useFallback = false;
-            const badge = document.getElementById('db-status-badge');
-            if (badge) {
-                badge.innerText = "🟢 클라우드 DB 연결 (직접 모드)";
-                badge.className = "text-purple-400 font-bold font-mono-code";
-            }
+            console.error("Firebase init error:", e);
         }
+
+        // Complete Authentication FIRST before any query
+        const authReadyPromise = (async () => {
+            if (!auth) return null;
+            try {
+                let cred = null;
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    cred = await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    cred = await signInAnonymously(auth);
+                }
+                currentUser = cred.user;
+
+                const badge = document.getElementById('db-status-badge');
+                if (badge) {
+                    badge.innerText = `🟢 클라우드 통신망 정상 연결 (${currentUser.uid.substring(0, 6)}...)`;
+                    badge.className = "text-purple-400 font-bold font-mono-code";
+                }
+                return currentUser;
+            } catch (err) {
+                console.warn("Auth initial error:", err);
+                const badge = document.getElementById('db-status-badge');
+                if (badge) {
+                    badge.innerText = "🟡 로컬 직통 모드 활성";
+                    badge.className = "text-amber-300 font-bold font-mono-code";
+                }
+                return null;
+            }
+        })();
 
         let currentUserName = '';
         let currentRoomCode = '';
@@ -691,8 +705,15 @@
         const METEOR_LIMIT_MS = 45000;
         let lastWarningSecond = -1;
 
-        // ★ [연타 방지 가드 플래그] 4단계 방어 펄스 격발 중복 클릭 방지
+        // Anti-spam and wave completion idempotency locks
         let isActionProcessing = false;
+        const launchedWaveNumbers = new Set();
+
+        // Strict Path Generator
+        function getRoomDocRef(roomCode) {
+            if (!db) return null;
+            return doc(db, 'artifacts', appId, 'public', 'data', 'arc_origin_rooms', roomCode);
+        }
 
         const WAVE_CONFIGS = [
             { index: 1, name: "중심각-원주각 2배 법칙", theorem: "center_double", icon: "🌌" },
@@ -965,6 +986,7 @@
             currentRoomCode = code;
             myTeam = team;
             isActionProcessing = false;
+            launchedWaveNumbers.clear();
 
             const myMemberObj = { id: myPlayerId, name: currentUserName, lastSeen: Date.now(), joinedAt: myJoinedAt };
 
@@ -975,8 +997,10 @@
                     bc.onmessage = (event) => {
                         const msg = event.data;
                         if (!msg) return;
-                        if (msg.type === 'LOCAL_PING' && msg.team === myTeam) {
-                            addCelestialPing(msg.x, msg.y, msg.sender);
+                        if (msg.type === 'LOCAL_PING') {
+                            if (myTeam === 'spectator' || msg.team === myTeam) {
+                                addCelestialPing(msg.x, msg.y, msg.sender);
+                            }
                         } else if (msg.type === 'SYNC_STATE' && msg.payload) {
                             applyRoomState(msg.payload);
                         }
@@ -994,12 +1018,13 @@
             else initialData.redMembers = [myMemberObj];
             applyRoomState(initialData);
 
+            await authReadyPromise;
             try {
-                if (db) {
-                    const roomRef = doc(db, 'arc_origin_rooms', currentRoomCode);
-                    startFirestoreListener(roomRef);
+                const roomDoc = getRoomDocRef(currentRoomCode);
+                if (roomDoc) {
+                    startFirestoreListener(roomDoc);
 
-                    const snap = await getDoc(roomRef);
+                    const snap = await getDoc(roomDoc);
                     let currentData = snap.exists() ? snap.data() : createInitialRoomData();
                     const listKey = team === 'blue' ? 'blueMembers' : 'redMembers';
                     let currentList = currentData[listKey] || [];
@@ -1008,7 +1033,14 @@
                     currentData[listKey] = cleanMemberList(currentList);
                     currentData.updatedAt = Date.now();
 
-                    await setDoc(roomRef, currentData, { merge: true });
+                    applyRoomState(currentData);
+                    await setDoc(roomDoc, currentData, { merge: true });
+
+                    if (bc) {
+                        try {
+                            bc.postMessage({ type: 'SYNC_STATE', payload: currentData });
+                        } catch (e) {}
+                    }
                 }
             } catch (err) {
                 console.warn("Arc origin join error:", err);
@@ -1018,7 +1050,6 @@
             meteorStartTime = Date.now();
         };
 
-        // Teacher Spectator / Broadcaster Entry Function
         window.joinSpectator = async function() {
             const codeInput = document.getElementById('room-code');
             const code = (codeInput ? codeInput.value.trim() : '') || 'arc301';
@@ -1027,6 +1058,7 @@
             currentRoomCode = code;
             myTeam = 'spectator';
             isActionProcessing = false;
+            launchedWaveNumbers.clear();
 
             try {
                 if (window.BroadcastChannel) {
@@ -1049,11 +1081,12 @@
             initOrbitCanvas();
             sfx.victoryFanfare();
 
+            await authReadyPromise;
             try {
-                if (db) {
-                    const roomRef = doc(db, 'arc_origin_rooms', currentRoomCode);
-                    startFirestoreListener(roomRef);
-                    const snap = await getDoc(roomRef);
+                const roomDoc = getRoomDocRef(currentRoomCode);
+                if (roomDoc) {
+                    startFirestoreListener(roomDoc);
+                    const snap = await getDoc(roomDoc);
                     if (snap.exists()) {
                         applyRoomState(snap.data());
                     } else {
@@ -1068,13 +1101,14 @@
         async function leaveRoomCleanup() {
             if (!currentRoomCode || !myTeam || myTeam === 'spectator' || !db) return;
             try {
-                const roomRef = doc(db, 'arc_origin_rooms', currentRoomCode);
-                const snap = await getDoc(roomRef);
+                const roomDoc = getRoomDocRef(currentRoomCode);
+                if (!roomDoc) return;
+                const snap = await getDoc(roomDoc);
                 if (snap.exists()) {
                     const data = snap.data();
                     const listKey = myTeam === 'blue' ? 'blueMembers' : 'redMembers';
                     const filtered = (data[listKey] || []).filter(m => (m.id || m.name) !== myPlayerId);
-                    await updateDoc(roomRef, { [listKey]: filtered, updatedAt: Date.now() });
+                    await updateDoc(roomDoc, { [listKey]: filtered, updatedAt: Date.now() });
                 }
             } catch (e) {}
         }
@@ -1086,20 +1120,30 @@
             if (myTeam === 'blue') fresh.blueMembers = [myMemberObj];
             else if (myTeam === 'red') fresh.redMembers = [myMemberObj];
 
+            await authReadyPromise;
             try {
-                if (db) {
-                    const roomRef = doc(db, 'arc_origin_rooms', code);
-                    await setDoc(roomRef, fresh);
+                const roomDoc = getRoomDocRef(code);
+                if (roomDoc) {
+                    await setDoc(roomDoc, fresh);
                 }
             } catch (e) {}
+
+            isActionProcessing = false;
+            launchedWaveNumbers.clear();
             applyRoomState(fresh);
             meteorStartTime = Date.now();
-            showCustomModal("초기화 완료", "배틀룸 대원 명단과 웨이브 데이터가 깨끗하게 리셋되었습니다!");
+
+            if (bc) {
+                try {
+                    bc.postMessage({ type: 'SYNC_STATE', payload: fresh });
+                } catch (e) {}
+            }
+            showCustomModal("초기화 완료", "오리진 돔 수호 대원 명단과 웨이브 스코어가 깨끗하게 리셋되었습니다!");
         };
 
-        function startFirestoreListener(roomRef) {
+        function startFirestoreListener(roomDocRef) {
             if (unsubscribeRoom) unsubscribeRoom();
-            unsubscribeRoom = onSnapshot(roomRef, (snap) => {
+            unsubscribeRoom = onSnapshot(roomDocRef, (snap) => {
                 if (!snap.exists()) return;
                 applyRoomState(snap.data());
             }, (err) => {
@@ -1112,6 +1156,7 @@
 
             data.blueMembers = cleanMemberList(data.blueMembers || []);
             data.redMembers = cleanMemberList(data.redMembers || []);
+
             lastKnownRoomData = data;
 
             if (data.lastReflect && (!window.lastObservedReflectId || window.lastObservedReflectId !== data.lastReflect.id)) {
@@ -1126,7 +1171,7 @@
                 }
             }
 
-            if (data.smokeTarget === myTeam && (!window.lastObservedStormId || window.lastObservedStormId !== data.stormId)) {
+            if (data.stormTarget === myTeam && (!window.lastObservedStormId || window.lastObservedStormId !== data.stormId)) {
                 window.lastObservedStormId = data.stormId;
                 activateStormCover();
             }
@@ -1135,8 +1180,10 @@
 
             const bMembers = (data.blueMembers || []).map(m => m.name || m);
             const rMembers = (data.redMembers || []).map(m => m.name || m);
-            document.getElementById('blue-members').innerText = `수호대(${bMembers.length}명): ${bMembers.join(', ') || '대기 중'}`;
-            document.getElementById('red-members').innerText = `수호대(${rMembers.length}명): ${rMembers.join(', ') || '대기 중'}`;
+            const bMemEl = document.getElementById('blue-members');
+            const rMemEl = document.getElementById('red-members');
+            if (bMemEl) bMemEl.innerText = `수호대(${bMembers.length}명): ${bMembers.join(', ') || '대기 중'}`;
+            if (rMemEl) rMemEl.innerText = `수호대(${rMembers.length}명): ${rMembers.join(', ') || '대기 중'}`;
 
             updatePipelineUI(data);
 
@@ -1154,13 +1201,13 @@
                     bc.postMessage({ type: 'SYNC_STATE', payload: nextData });
                 } catch (e) {}
             }
-            if (!useFallback && db) {
-                try {
-                    const roomRef = doc(db, 'arc_origin_rooms', currentRoomCode);
-                    await updateDoc(roomRef, nextData);
-                } catch (e) {
-                    useFallback = true;
+            try {
+                const roomDoc = getRoomDocRef(currentRoomCode);
+                if (roomDoc) {
+                    await updateDoc(roomDoc, nextData);
                 }
+            } catch (e) {
+                console.warn("Update sync error:", e);
             }
         }
 
@@ -1177,8 +1224,7 @@
             rRow.innerHTML = '';
 
             for (let i = 0; i < 5; i++) {
-                const targetNum = i + 1;
-                const waveInfo = WAVE_CONFIGS[i];
+                const wave = WAVE_CONFIGS[i];
                 
                 // Blue badge
                 const isBlueDone = i < bW;
@@ -1188,11 +1234,11 @@
                         isBlueDone 
                             ? 'bg-indigo-950/80 border-indigo-400 text-indigo-300 shadow-[0_0_6px_#818cf8]' 
                             : (isBlueActive 
-                                ? (i === 4 ? 'bg-rose-950/80 border-rose-400 text-rose-300 animate-pulse font-bold' : 'bg-amber-950/80 border-amber-400 text-amber-300 animate-pulse font-bold')
+                                ? (i === 4 ? 'bg-rose-950 border-2 border-rose-400 text-rose-300 animate-pulse font-bold' : 'bg-amber-950/80 border-amber-400 text-amber-300 animate-pulse') 
                                 : 'bg-slate-900/50 border-slate-800 text-slate-600')
                     }">
-                        <span class="text-xs">${waveInfo.icon}</span>
-                        <span class="text-[9px] truncate w-full">${i === 4 ? '보스전' : `${targetNum}단계`}</span>
+                        <span class="text-xs">${wave.icon}</span>
+                        <span class="text-[9px] truncate w-full">${i === 4 ? '보스전' : `${wave.index}단계`}</span>
                     </div>
                 `;
 
@@ -1202,13 +1248,13 @@
                 rRow.innerHTML += `
                     <div class="p-1 rounded-lg border flex flex-col items-center ${
                         isRedDone 
-                            ? 'bg-amber-950/80 border-amber-400 text-amber-300 shadow-[0_0_6px_#f59e0b]' 
+                            ? 'bg-rose-950/80 border-rose-400 text-rose-300 shadow-[0_0_6px_#fb7185]' 
                             : (isRedActive 
-                                ? (i === 4 ? 'bg-rose-950/80 border-rose-400 text-rose-300 animate-pulse font-bold' : 'bg-amber-950/80 border-amber-400 text-amber-300 animate-pulse font-bold')
+                                ? (i === 4 ? 'bg-rose-950 border-2 border-rose-400 text-rose-300 animate-pulse font-bold' : 'bg-amber-950/80 border-amber-400 text-amber-300 animate-pulse') 
                                 : 'bg-slate-900/50 border-slate-800 text-slate-600')
                     }">
-                        <span class="text-xs">${waveInfo.icon}</span>
-                        <span class="text-[9px] truncate w-full">${i === 4 ? '보스전' : `${targetNum}단계`}</span>
+                        <span class="text-xs">${wave.icon}</span>
+                        <span class="text-[9px] truncate w-full">${i === 4 ? '보스전' : `${wave.index}단계`}</span>
                     </div>
                 `;
             }
@@ -1217,6 +1263,7 @@
         function updatePipelineUI(data) {
             const team = myTeam;
 
+            // Handle Spectator / Broadcaster View
             if (team === 'spectator') {
                 const specPanel = document.getElementById('spectator-broadcast-panel');
                 const propControl = document.getElementById('property-select-control');
@@ -1239,11 +1286,17 @@
                 }
                 const roleBadge = document.getElementById('my-role-badge');
                 if (roleBadge) {
-                    roleBadge.innerText = `관전 모드 (학생 풀이 미방해)`;
+                    roleBadge.innerText = `관전 모드 (학생 진행 100% 자율)`;
                     roleBadge.className = 'text-xs px-3.5 py-1 bg-slate-800 text-slate-300 border border-slate-600 rounded-full font-bold font-mono-code';
                 }
 
-                const stageNames = ["① 기하 법칙 판별", "② 위상 연계 수식", "③ 제원 산출", "④ 오리진 돔 격발 ⚡"];
+                const stageNames = [
+                    "① 기하 법칙 판별",
+                    "② 위상 연계 분석",
+                    "③ 방어 각도 θ 도출",
+                    "④ 오리진 돔 격발 ⚡"
+                ];
+
                 const bMembers = cleanMemberList(data.blueMembers || []);
                 const rMembers = cleanMemberList(data.redMembers || []);
                 const bStage = data.blueStage || 0;
@@ -1272,17 +1325,20 @@
 
                 const instEl = document.getElementById('step-instruction');
                 if (instEl) {
-                    instEl.innerHTML = `<span class="text-yellow-300">📡 [실시간 중계 중] 양 성단의 원주각 돔 방어전을 관전하고 있습니다.</span>`;
+                    instEl.innerHTML = `<span class="text-yellow-300">📡 [실시간 공식 중계 중] 양 성단의 원주각 돔 방어전을 관전하고 있습니다.</span>`;
                 }
 
-                const leadMission = bWaves >= rWaves ? data.blueMission : data.redMission;
-                if (leadMission) {
+                const activeMission = bWaves >= rWaves ? data.blueMission : data.redMission;
+                if (activeMission) {
                     const clueEl = document.getElementById('geometry-clue-display');
-                    if (clueEl) clueEl.innerText = `[선두 성단 힌트] ${leadMission.clueText}`;
+                    if (clueEl) clueEl.innerText = `[선두 성단 힌트] ${activeMission.clue}`;
+                    const targetEl = document.getElementById('current-op-name');
+                    if (targetEl) targetEl.innerText = `웨이브 #${Math.max(bWaveNum, rWaveNum)} : ${activeMission.waveIcon} ${activeMission.waveName}`;
                 }
                 return;
             }
 
+            // Normal Student Pipeline UI
             const myRawMembers = team === 'blue' ? (data.blueMembers || []) : (data.redMembers || []);
             const myMembers = cleanMemberList(myRawMembers);
             const currentStage = team === 'blue' ? (data.blueStage || 0) : (data.redStage || 0);
@@ -1292,10 +1348,11 @@
 
             if (!currentMission) return;
 
-            document.getElementById('geometry-clue-display').innerText = currentMission.clueText;
+            document.getElementById('geometry-clue-display').innerText = currentMission.clue;
             document.getElementById('current-op-name').innerText = `웨이브 #${waveNum} : ${currentMission.waveIcon} ${currentMission.waveName}`;
             document.getElementById('theorem-type-label').innerText = `THEOREM: ${currentMission.theoremType.toUpperCase()}`;
 
+            // Update Puzzle HUD Slots
             const slotArc = document.getElementById('slot-arc');
             const slotTheorem = document.getElementById('slot-theorem');
             const slotAngle = document.getElementById('slot-angle');
@@ -1381,6 +1438,9 @@
 
             if (isMyTurn) {
                 waitingNotice.classList.add('hidden');
+                // Ensure actionProcessing lock is reset on my turn
+                isActionProcessing = false;
+
                 if (currentStage === 0) {
                     choiceControl.classList.add('hidden');
                     numControl.classList.add('hidden');
@@ -1415,6 +1475,11 @@
                     choiceControl.classList.add('hidden');
                     numControl.classList.add('hidden');
                     fireControl.classList.remove('hidden');
+                    const fireBtn = document.getElementById('fire-action-btn');
+                    if (fireBtn) {
+                        fireBtn.disabled = false;
+                        fireBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                    }
                 }
             } else {
                 propControl.classList.add('hidden');
@@ -1453,7 +1518,7 @@
         }
 
         window.submitPropertyStep = async function(propIndex) {
-            if (isLockedOut) return;
+            if (isLockedOut || isActionProcessing) return;
             if (!lastKnownRoomData) return;
             const data = lastKnownRoomData;
             const currentStage = myTeam === 'blue' ? (data.blueStage || 0) : (data.redStage || 0);
@@ -1462,6 +1527,7 @@
             if (currentStage !== 0) return;
 
             if (propIndex === mission.propCorrectIndex) {
+                isActionProcessing = true;
                 sfx.unlockChirp();
                 const nextData = { ...data };
                 if (myTeam === 'blue') nextData.blueStage = 1;
@@ -1470,6 +1536,7 @@
                 showStepFeedback("✨ [기하 법칙 판별 완료!] 위상 연계 수식을 유도합니다! 2번 대원 분석 개시!", false);
                 nextData.updatedAt = Date.now();
                 await syncStateUpdate(nextData);
+                setTimeout(() => { isActionProcessing = false; }, 300);
             } else {
                 showStepFeedback("❌ 기하 법칙 판별 오류! 힌트의 호와 각도 관계를 다시 점검하세요. (5초 위상 정렬)", true);
                 triggerLockoutPenalty();
@@ -1477,7 +1544,7 @@
         };
 
         window.submitChoiceStep = async function(choiceIdx) {
-            if (isLockedOut) return;
+            if (isLockedOut || isActionProcessing) return;
             if (!lastKnownRoomData) return;
             const data = lastKnownRoomData;
             const currentStage = myTeam === 'blue' ? (data.blueStage || 0) : (data.redStage || 0);
@@ -1486,6 +1553,7 @@
             if (currentStage !== 1) return;
 
             if (choiceIdx === mission.intermediateCorrectIndex) {
+                isActionProcessing = true;
                 sfx.unlockChirp();
                 const nextData = { ...data };
                 if (myTeam === 'blue') nextData.blueStage = 2;
@@ -1494,6 +1562,7 @@
                 showStepFeedback("✨ [위상 연계 성공!] 궤도에 기하학 보조선이 투영되었습니다! 3번 대원 방어각 θ 도출 개시!", false);
                 nextData.updatedAt = Date.now();
                 await syncStateUpdate(nextData);
+                setTimeout(() => { isActionProcessing = false; }, 300);
             } else {
                 showStepFeedback("❌ 위상 연계 수식 오류! 기하 정리 수식을 다시 확인하세요! (5초 위상 정렬)", true);
                 triggerLockoutPenalty();
@@ -1501,7 +1570,7 @@
         };
 
         window.submitAngleStep = async function() {
-            if (isLockedOut) return;
+            if (isLockedOut || isActionProcessing) return;
             if (!lastKnownRoomData) return;
             const inputEl = document.getElementById('step-number-input');
             const sanitized = inputEl.value.trim().replace(/[^0-9.-]/g, '');
@@ -1520,6 +1589,7 @@
             if (currentStage !== 2) return;
 
             if (val === mission.targetAngle) {
+                isActionProcessing = true;
                 sfx.unlockChirp();
                 const nextData = { ...data };
                 if (myTeam === 'blue') nextData.blueStage = 3;
@@ -1528,6 +1598,7 @@
                 showStepFeedback(`🎯 [방어 각도 θ = ${val}° 산출 완료!] 오리진 에너지 돔이 100% 충전되었습니다! 4번 대원 펄스를 격발하세요!`, false);
                 nextData.updatedAt = Date.now();
                 await syncStateUpdate(nextData);
+                setTimeout(() => { isActionProcessing = false; }, 300);
             } else {
                 showStepFeedback("❌ 각도 계산 오류! 사칙연산과 비례식을 재검토하세요. (5초 위상 정렬)", true);
                 triggerLockoutPenalty();
@@ -1535,14 +1606,21 @@
         };
 
         window.openDomeModal = function() {
-            // ★ [연타 방지 가드 1] 이미 처리 중이면 모달 오픈 차단
             if (isActionProcessing) return;
             document.getElementById('payload-modal').classList.remove('hidden');
         };
 
         window.choosePayload = async function(payloadType) {
-            // ★ [연타 방지 가드 2] 즉시 잠금 설정 및 버튼 비활성화
             if (isActionProcessing) return;
+            if (!lastKnownRoomData) return;
+
+            const data = lastKnownRoomData;
+            const waveNum = myTeam === 'blue' ? (data.blueWaves || 0) + 1 : (data.redWaves || 0) + 1;
+
+            // Idempotency: Prevent completing the same wave more than once
+            if (launchedWaveNumbers.has(waveNum)) return;
+            launchedWaveNumbers.add(waveNum);
+
             isActionProcessing = true;
 
             const fireActionBtn = document.getElementById('fire-action-btn');
@@ -1552,16 +1630,11 @@
             }
 
             document.getElementById('payload-modal').classList.add('hidden');
-            if (!lastKnownRoomData) {
-                isActionProcessing = false;
-                return;
-            }
 
-            const data = lastKnownRoomData;
             const enemyTeam = myTeam === 'blue' ? 'red' : 'blue';
             const mission = myTeam === 'blue' ? data.blueMission : data.redMission;
 
-            sfx.pulseReflect();
+            sfx.domeDefend();
             triggerLocalShieldDeflect(payloadType, mission);
 
             const nextData = { ...data };
@@ -1574,35 +1647,43 @@
             };
 
             if (payloadType === 'plasma_storm') {
-                nextData.mistTarget = enemyTeam;
-                nextData.mistId = Date.now();
+                nextData.stormTarget = enemyTeam;
+                nextData.stormId = Date.now();
                 showStepFeedback(`🌪️ [${mission.waveName}] 수호 성공! 적 돔에 플라즈마 폭풍 EMP 살포!`, false);
             } else {
                 showStepFeedback(`⚡ [${mission.waveName}] 오리진 돔 완전 방어 성공! 메테오 파쇄 카운터 빔 방출!`, false);
             }
 
             setTimeout(async () => {
-                const latest = lastKnownRoomData || nextData;
-                const hitData = { ...latest };
+                try {
+                    const latest = lastKnownRoomData || nextData;
+                    const hitData = { ...latest };
 
-                if (myTeam === 'blue') {
-                    hitData.blueWaves = Math.min(5, (hitData.blueWaves || 0) + 1);
-                    const nextWaveNum = hitData.blueWaves + 1;
-                    hitData.blueStage = 0;
-                    hitData.blueMission = generateInscribedMission(nextWaveNum);
-                } else {
-                    hitData.redWaves = Math.min(5, (hitData.redWaves || 0) + 1);
-                    const nextWaveNum = hitData.redWaves + 1;
-                    hitData.redStage = 0;
-                    hitData.redMission = generateInscribedMission(nextWaveNum);
+                    if (myTeam === 'blue') {
+                        hitData.blueWaves = Math.min(5, Math.max((hitData.blueWaves || 0) + 1, waveNum));
+                        const nextWaveNum = hitData.blueWaves + 1;
+                        hitData.blueStage = 0;
+                        hitData.blueMission = generateInscribedMission(nextWaveNum);
+                    } else {
+                        hitData.redWaves = Math.min(5, Math.max((hitData.redWaves || 0) + 1, waveNum));
+                        const nextWaveNum = hitData.redWaves + 1;
+                        hitData.redStage = 0;
+                        hitData.redMission = generateInscribedMission(nextWaveNum);
+                    }
+
+                    meteorStartTime = Date.now(); // Reset 45s descent timer for next wave!
+                    sfx.beamReflect();
+                    hitData.updatedAt = Date.now();
+                    await syncStateUpdate(hitData);
+                } finally {
+                    isActionProcessing = false;
                 }
-
-                meteorStartTime = Date.now(); // Reset 45s descent timer for next wave!
-                sfx.beamReflect();
-                hitData.updatedAt = Date.now();
-                isActionProcessing = false;
-                await syncStateUpdate(hitData);
             }, 850);
+
+            // Safety unlock watchdog
+            setTimeout(() => {
+                isActionProcessing = false;
+            }, 1300);
 
             nextData.updatedAt = Date.now();
             await syncStateUpdate(nextData);
@@ -1630,13 +1711,13 @@
             if (!el) return;
             el.innerText = text;
             el.className = isError 
-                ? "text-sm font-bold text-rose-400 min-h-[24px] mt-3 animate-pulse" 
-                : "text-sm font-bold text-emerald-400 min-h-[24px] mt-3";
+                ? "text-sm font-bold text-rose-400 min-h-[24px] mt-2 animate-pulse" 
+                : "text-sm font-bold text-purple-300 min-h-[24px] mt-2";
         }
 
         window.sendQuickCheer = function(text) {
-            showStepFeedback(`📻 [사령부 무전] ${text}`, false);
-            sfx.playTone(550, 'sine', 0.12, 0.2);
+            showStepFeedback(`📻 [성간 통신] ${text}`, false);
+            sfx.playTone(620, 'sine', 0.12, 0.2);
         };
 
         window.showCustomModal = function(title, msg) {
@@ -1662,14 +1743,15 @@
 
             setTimeout(() => {
                 document.getElementById('victory-modal').classList.remove('hidden');
-            }, 1200);
+            }, 1000);
         }
 
         let canvas, ctx;
-        let radarSweepAngle = 0;
-        let tacticalPings = [];
-        let shieldBeams = [];
-        let explosions = [];
+        let celestialPings = [];
+        let reflectRays = [];
+        let domeShockwaves = [];
+        let celestialSparks = [];
+        let orbitRotation = 0;
 
         function initOrbitCanvas() {
             canvas = document.getElementById('orbit-canvas');
@@ -1687,7 +1769,7 @@
                 }
             });
 
-            requestAnimationFrame(renderRadarLoop);
+            requestAnimationFrame(renderOrbitLoop);
         }
 
         function resizeOrbitCanvas() {
@@ -1701,21 +1783,13 @@
             triggerPingFromCoords(e.clientX - rect.left, e.clientY - rect.top);
         }
 
-        function triggerPingFromCoords(canvasX, canvasY) {
-            const cx = canvas.width / 2;
-            const cy = canvas.height / 2;
-            const dx = canvasX - cx;
-            const dy = cy - canvasY;
-            let angle = Math.atan2(dy, dx) * (180 / Math.PI);
-            if (angle < 0) angle += 360;
-
-            const roundAngle = Math.round(angle);
-            sfx.radarPing();
-            addTacticalPing(roundAngle, currentUserName || '항해관');
+        function triggerPingFromCoords(cx, cy) {
+            sfx.celestialPing();
+            addCelestialPing(cx, cy, currentUserName || '수호관');
 
             if (bc) {
                 try {
-                    bc.postMessage({ type: 'LOCAL_PING', team: myTeam, angle: roundAngle, sender: currentUserName || '항해관' });
+                    bc.postMessage({ type: 'LOCAL_PING', team: myTeam, x: Math.round(cx), y: Math.round(cy), sender: currentUserName || '수호관' });
                 } catch (e) {}
             }
 
@@ -1725,227 +1799,562 @@
                 const pingData = { ...lastKnownRoomData };
                 pingData.lastPing = {
                     team: myTeam,
-                    angle: roundAngle,
-                    sender: currentUserName || '항해관',
+                    x: Math.round(cx),
+                    y: Math.round(cy),
+                    sender: currentUserName || '수호관',
                     id: Date.now() + Math.random()
                 };
                 syncStateUpdate(pingData);
             }
         }
 
-        function addTacticalPing(angle, sender) {
-            tacticalPings.push({
-                angle: angle,
+        function addCelestialPing(x, y, sender) {
+            celestialPings.push({
+                x: x,
+                y: y,
                 sender: sender,
-                radius: 12,
-                maxRadius: 55,
+                radius: 6,
+                maxRadius: 40,
                 alpha: 1
             });
         }
 
-        function triggerShieldLaunch(team, angle, tacticalType) {
-            shieldBeams.push({
-                team: team,
-                angle: angle,
-                tacticalType: tacticalType || 'reflect',
-                progress: 0
+        function triggerLocalShieldDeflect(payloadType, mission) {
+            const midX = canvas.width / 2;
+            const midY = canvas.height / 2;
+            
+            domeShockwaves.push({
+                x: midX,
+                y: midY,
+                radius: 50,
+                maxRadius: Math.min(canvas.width, canvas.height) * 0.48,
+                color: payloadType === 'plasma_storm' ? '#c084fc' : '#38bdf8',
+                alpha: 1
             });
-        }
 
-        function triggerDefenseSuccessAnim(team) {
+            reflectRays.push({
+                startX: midX,
+                startY: midY,
+                endX: midX + Math.cos(-Math.PI / 3) * 180,
+                endY: midY + Math.sin(-Math.PI / 3) * 180,
+                progress: 0,
+                color: '#facc15'
+            });
+
             for (let i = 0; i < 40; i++) {
                 const angle = Math.random() * Math.PI * 2;
                 const speed = Math.random() * 6 + 2;
-                explosions.push({
-                    x: canvas.width / 2,
-                    y: canvas.height / 2,
+                celestialSparks.push({
+                    x: midX,
+                    y: midY,
                     vx: Math.cos(angle) * speed,
                     vy: Math.sin(angle) * speed,
-                    radius: Math.random() * 4 + 2,
-                    color: team === 'red' ? '#fb7185' : '#38bdf8',
+                    radius: Math.random() * 4 + 1.5,
+                    color: '#c084fc',
                     alpha: 1
                 });
             }
         }
 
-        function renderRadarLoop() {
+        function triggerReflectEvent(reflectData) {
+            if (reflectData.fromTeam !== myTeam) {
+                domeShockwaves.push({
+                    x: canvas.width * 0.85,
+                    y: canvas.height * 0.25,
+                    radius: 20,
+                    maxRadius: 70,
+                    color: '#fb7185',
+                    alpha: 1
+                });
+                sfx.playTone(380, 'triangle', 0.25, 0.2);
+            }
+        }
+
+        function renderOrbitLoop() {
             if (!ctx || !canvas) return;
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
             const w = canvas.width;
             const h = canvas.height;
-            const cx = w / 2;
-            const cy = h / 2;
-            const maxR = Math.min(w, h) * 0.44;
+            const midX = w / 2;
+            const midY = h / 2;
+            const orbitRadius = Math.min(w, h) * 0.38;
 
-            // 1. Radar Circular Background
-            ctx.save();
-            ctx.fillStyle = '#010d14';
-            ctx.beginPath();
-            ctx.arc(cx, cy, maxR, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.strokeStyle = '#0e7490';
-            ctx.lineWidth = 3;
-            ctx.stroke();
+            orbitRotation += 0.003;
 
-            // Concentric Range Rings
-            ctx.strokeStyle = 'rgba(34, 211, 238, 0.22)';
-            ctx.lineWidth = 1;
-            for (let r = 1; r <= 4; r++) {
-                ctx.beginPath();
-                ctx.arc(cx, cy, r * (maxR / 4), 0, Math.PI * 2);
-                ctx.stroke();
+            // 1. Cosmic Deep Space Background with Stars
+            ctx.fillStyle = '#02030a';
+            ctx.fillRect(0, 0, w, h);
+
+            // Starlight field
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+            for (let s = 1; s <= 35; s++) {
+                const sx = (s * 137.5 + orbitRotation * 200) % w;
+                const sy = (s * 93.3) % h;
+                const sz = (s % 3 === 0) ? 2 : 1;
+                ctx.fillRect(sx, sy, sz, sz);
             }
 
-            // Central Core Base Station
-            ctx.fillStyle = '#22d3ee';
-            ctx.beginPath();
-            ctx.arc(cx, cy, 14, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.strokeStyle = '#ffffff';
+            // 2. Real-Time Meteor Descent Dynamics (45s Timer)
+            const elapsed = Date.now() - meteorStartTime;
+            const remainingMs = Math.max(0, METEOR_LIMIT_MS - elapsed);
+            const remainingSec = (remainingMs / 1000).toFixed(1);
+
+            const timerHudEl = document.getElementById('meteor-timer-text');
+            const timerCanvasEl = document.getElementById('canvas-meteor-timer');
+            if (timerHudEl) timerHudEl.innerText = `${remainingSec}s`;
+            if (timerCanvasEl) timerCanvasEl.innerText = `${remainingSec}초`;
+
+            // Sound warning when timer < 10 seconds
+            const currentIntSec = Math.floor(remainingMs / 1000);
+            if (currentIntSec <= 10 && currentIntSec > 0 && currentIntSec !== lastWarningSecond) {
+                lastWarningSecond = currentIntSec;
+                sfx.meteorImpactWarning();
+            }
+
+            // If time runs out, meteor shockwave resets the timer
+            if (remainingMs <= 0 && !battleEnded) {
+                meteorStartTime = Date.now();
+                sfx.error();
+                showStepFeedback("⚠️ 메테오 대기권 돌파 충돌! 쉴드 과열로 비상 냉각 가동! (타이머 재설정)", true);
+                triggerLockoutPenalty();
+            }
+
+            const meteorProgress = Math.min(1, elapsed / METEOR_LIMIT_MS);
+
+            // 3. Giant Planetary Orbit Circle (The Arc Origin Sphere)
+            ctx.save();
+            ctx.strokeStyle = 'rgba(129, 140, 248, 0.35)';
             ctx.lineWidth = 2;
+            ctx.shadowBlur = 15;
+            ctx.shadowColor = '#818cf8';
+            ctx.beginPath();
+            ctx.arc(midX, midY, orbitRadius, 0, Math.PI * 2);
             ctx.stroke();
 
-            // Render Heat Shield Dome if active
-            const hasHeatShield = lastKnownRoomData ? (myTeam === 'blue' ? lastKnownRoomData.blueHeatShield : lastKnownRoomData.redHeatShield) : false;
-            if (hasHeatShield) {
-                ctx.strokeStyle = '#facc15';
-                ctx.lineWidth = 3;
-                ctx.fillStyle = 'rgba(250, 204, 21, 0.22)';
-                ctx.beginPath();
-                ctx.arc(cx, cy, 28, 0, Math.PI * 2);
-                ctx.fill();
-                ctx.stroke();
-
-                ctx.font = 'bold 10px sans-serif';
-                ctx.fillStyle = '#fef08a';
-                ctx.textAlign = 'center';
-                ctx.fillText("🛡️ 방열 실드 활성", cx, cy - 35);
-            }
-
-            // 2. Rotating Sonar Sweep Beam
-            radarSweepAngle += 0.02;
-            const sweepGrad = ctx.createRadialGradient(cx, cy, 0, cx, cy, maxR);
-            sweepGrad.addColorStop(0, 'rgba(34, 211, 238, 0.35)');
-            sweepGrad.addColorStop(1, 'rgba(34, 211, 238, 0.0)');
-            
-            ctx.save();
+            // Outer Celestial Compass Ring
+            ctx.strokeStyle = 'rgba(192, 132, 252, 0.2)';
+            ctx.lineWidth = 1;
+            ctx.setLineDash([6, 8]);
             ctx.beginPath();
-            ctx.moveTo(cx, cy);
-            ctx.arc(cx, cy, maxR, radarSweepAngle - 0.3, radarSweepAngle);
-            ctx.closePath();
-            ctx.fillStyle = sweepGrad;
-            ctx.fill();
+            ctx.arc(midX, midY, orbitRadius + 18, 0, Math.PI * 2);
+            ctx.stroke();
+            ctx.setLineDash([]);
             ctx.restore();
 
-            // 3. Draw Active Sector Arc Shield & Meteor Warning
+            // 4. Central Planetary Core (Center O)
+            ctx.save();
+            ctx.fillStyle = '#1e1b4b';
+            ctx.strokeStyle = '#c084fc';
+            ctx.lineWidth = 2.5;
+            ctx.shadowBlur = 18;
+            ctx.shadowColor = '#c084fc';
+            ctx.beginPath();
+            ctx.arc(midX, midY, 14, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+
+            ctx.font = 'bold 11px "JetBrains Mono", monospace';
+            ctx.fillStyle = '#fef08a';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText("O", midX, midY);
+            ctx.restore();
+
+            // 5. Render Active Geometric Constellation & Incoming Descending Meteor
             if (lastKnownRoomData) {
-                const data = lastKnownRoomData;
-                const mission = myTeam === 'spectator'
-                    ? ((data.blueScore || 0) >= (data.redScore || 0) ? data.blueMission : data.redMission)
-                    : (myTeam === 'blue' ? data.blueMission : data.redMission);
-                drawActiveArcShield(cx, cy, maxR, mission);
+                const mission = myTeam === 'spectator' 
+                    ? ((lastKnownRoomData.blueWaves || 0) >= (lastKnownRoomData.redWaves || 0) ? lastKnownRoomData.blueMission : lastKnownRoomData.redMission)
+                    : (myTeam === 'blue' ? lastKnownRoomData.blueMission : lastKnownRoomData.redMission);
+                const currentStage = myTeam === 'spectator'
+                    ? ((lastKnownRoomData.blueWaves || 0) >= (lastKnownRoomData.redWaves || 0) ? (lastKnownRoomData.blueStage || 0) : (lastKnownRoomData.redStage || 0))
+                    : (myTeam === 'blue' ? (lastKnownRoomData.blueStage || 0) : (lastKnownRoomData.redStage || 0));
+                drawGeometricCelestialConstellation(midX, midY, orbitRadius, mission, currentStage);
+                drawIncomingMeteor(midX, midY, orbitRadius, meteorProgress, mission);
             }
 
-            // 4. Draw Tactical Pings
-            for (let i = tacticalPings.length - 1; i >= 0; i--) {
-                const p = tacticalPings[i];
-                p.radius += 0.9;
-                p.alpha -= 0.025;
+            // 6. Draw Opponent PiP Mini Orbit Radar (Top Right)
+            drawOpponentMiniOrbit(w - 135, 45);
 
-                const rad = (p.angle * Math.PI) / 180;
-                const px = cx + Math.cos(rad) * (maxR * 0.7);
-                const py = cy - Math.sin(rad) * (maxR * 0.7);
+            // 7. Dome Shockwaves & Particle Deflections
+            for (let i = domeShockwaves.length - 1; i >= 0; i--) {
+                const sw = domeShockwaves[i];
+                sw.radius += 5.5;
+                sw.alpha -= 0.025;
+
+                ctx.save();
+                ctx.strokeStyle = sw.color;
+                ctx.globalAlpha = Math.max(0, sw.alpha);
+                ctx.lineWidth = 3.5;
+                ctx.shadowBlur = 20;
+                ctx.shadowColor = sw.color;
+                ctx.beginPath();
+                ctx.arc(sw.x, sw.y, sw.radius, 0, Math.PI * 2);
+                ctx.stroke();
+                ctx.restore();
+
+                if (sw.alpha <= 0 || sw.radius >= sw.maxRadius) domeShockwaves.splice(i, 1);
+            }
+
+            // Reflected Rays
+            for (let i = reflectRays.length - 1; i >= 0; i--) {
+                const ray = reflectRays[i];
+                ray.progress += 0.08;
+                const curX = ray.startX + (ray.endX - ray.startX) * ray.progress;
+                const curY = ray.startY + (ray.endY - ray.startY) * ray.progress;
+
+                ctx.save();
+                ctx.strokeStyle = ray.color;
+                ctx.lineWidth = 4;
+                ctx.shadowBlur = 16;
+                ctx.shadowColor = ray.color;
+                ctx.beginPath();
+                ctx.moveTo(ray.startX, ray.startY);
+                ctx.lineTo(curX, curY);
+                ctx.stroke();
+                ctx.restore();
+
+                if (ray.progress >= 1) reflectRays.splice(i, 1);
+            }
+
+            // Celestial Starlight Pings
+            for (let i = celestialPings.length - 1; i >= 0; i--) {
+                const p = celestialPings[i];
+                p.radius += 0.8;
+                p.alpha -= 0.025;
 
                 ctx.save();
                 ctx.strokeStyle = `rgba(250, 204, 21, ${p.alpha})`;
                 ctx.lineWidth = 2;
                 ctx.beginPath();
-                ctx.arc(px, py, p.radius, 0, Math.PI * 2);
+                ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
                 ctx.stroke();
 
                 ctx.fillStyle = `rgba(254, 240, 138, ${p.alpha})`;
                 ctx.font = 'bold 11px sans-serif';
                 ctx.textAlign = 'center';
-                ctx.fillText(`📍 ${p.sender} (${p.angle}°)`, px, py - p.radius - 4);
+                ctx.fillText(`✨ ${p.sender}`, p.x, p.y - p.radius - 4);
                 ctx.restore();
 
-                if (p.alpha <= 0) tacticalPings.splice(i, 1);
+                if (p.alpha <= 0) celestialPings.splice(i, 1);
             }
 
-            // 5. Draw Shield Beams / Counter Lasers
-            for (let i = shieldBeams.length - 1; i >= 0; i--) {
-                const b = shieldBeams[i];
-                b.progress += 0.04;
-
-                const rad = (b.angle * Math.PI) / 180;
-                const endX = cx + Math.cos(rad) * maxR * b.progress;
-                const endY = cy - Math.sin(rad) * maxR * b.progress;
+            // Sparks
+            for (let i = celestialSparks.length - 1; i >= 0; i--) {
+                const sp = celestialSparks[i];
+                sp.x += sp.vx;
+                sp.y += sp.vy;
+                sp.alpha -= 0.035;
 
                 ctx.save();
-                ctx.strokeStyle = b.tacticalType === 'emp' ? '#c084fc' : (b.tacticalType === 'harvest' ? '#facc15' : '#38bdf8');
-                ctx.lineWidth = 5;
-                ctx.shadowBlur = 15;
-                ctx.shadowColor = ctx.strokeStyle;
+                ctx.globalAlpha = Math.max(0, sp.alpha);
+                ctx.fillStyle = sp.color;
                 ctx.beginPath();
-                ctx.moveTo(cx, cy);
-                ctx.lineTo(endX, endY);
-                ctx.stroke();
-                ctx.restore();
-
-                if (b.progress >= 1) shieldBeams.splice(i, 1);
-            }
-
-            // 6. Draw Explosions
-            for (let i = explosions.length - 1; i >= 0; i--) {
-                const exp = explosions[i];
-                exp.x += exp.vx;
-                exp.y += exp.vy;
-                exp.alpha -= 0.035;
-
-                ctx.save();
-                ctx.globalAlpha = exp.alpha;
-                ctx.fillStyle = exp.color;
-                ctx.beginPath();
-                ctx.arc(exp.x, exp.y, exp.radius, 0, Math.PI * 2);
+                ctx.arc(sp.x, sp.y, sp.radius, 0, Math.PI * 2);
                 ctx.fill();
                 ctx.restore();
 
-                if (exp.alpha <= 0) explosions.splice(i, 1);
+                if (sp.alpha <= 0) celestialSparks.splice(i, 1);
+            }
+
+            requestAnimationFrame(renderOrbitLoop);
+        }
+
+        function drawIncomingMeteor(cx, cy, R, progress, mission) {
+            if (!mission) return;
+            const isBoss = (mission.waveIndex === 5);
+            const meteorAngle = -Math.PI * 0.35;
+            
+            const currentDist = (R * 2.1) - progress * (R * 1.1);
+            const mx = cx + Math.cos(meteorAngle) * currentDist;
+            const my = cy + Math.sin(meteorAngle) * currentDist;
+
+            ctx.save();
+            ctx.translate(mx, my);
+
+            for (let t = 0; t < 2; t++) {
+                celestialSparks.push({
+                    x: mx + (Math.random() - 0.5) * 12,
+                    y: my + (Math.random() - 0.5) * 12,
+                    vx: Math.cos(meteorAngle + Math.PI) * (Math.random() * 4 + 2),
+                    vy: Math.sin(meteorAngle + Math.PI) * (Math.random() * 4 + 2),
+                    radius: Math.random() * (isBoss ? 5 : 3) + 1.5,
+                    color: isBoss ? '#f43f5e' : '#f59e0b',
+                    alpha: 0.8
+                });
+            }
+
+            if (isBoss) {
+                const bossPulse = 1 + Math.sin(Date.now() / 180) * 0.08;
+                ctx.scale(bossPulse, bossPulse);
+
+                ctx.fillStyle = 'rgba(225, 29, 72, 0.35)';
+                ctx.shadowBlur = 30;
+                ctx.shadowColor = '#f43f5e';
+                ctx.beginPath();
+                ctx.arc(0, 0, 32, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.strokeStyle = '#facc15';
+                ctx.lineWidth = 2;
+                ctx.save();
+                ctx.rotate(Date.now() / 400);
+                ctx.strokeRect(-22, -22, 44, 44);
+                ctx.restore();
+
+                ctx.font = '28px sans-serif';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText("👾", 0, 0);
+
+                ctx.font = 'bold 11px "Cinzel", sans-serif';
+                ctx.fillStyle = '#fca5a5';
+                ctx.fillText("코스믹 보스 메테오", 0, -38);
+            } else {
+                ctx.fillStyle = '#ea580c';
+                ctx.shadowBlur = 18;
+                ctx.shadowColor = '#f97316';
+                ctx.beginPath();
+                ctx.arc(0, 0, 16, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.font = '20px sans-serif';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText("☄️", 0, 0);
+
+                ctx.font = 'bold 10px "JetBrains Mono", monospace';
+                ctx.fillStyle = '#fed7aa';
+                ctx.fillText(`WAVE #${mission.waveIndex}`, 0, -22);
             }
 
             ctx.restore();
-            requestAnimationFrame(renderRadarLoop);
         }
 
-        function drawActiveArcShield(cx, cy, maxR, mission) {
+        function drawGeometricCelestialConstellation(cx, cy, R, mission, currentStage) {
             if (!mission) return;
-            const startAngle = -0.4;
-            const endAngle = startAngle - (mission.angle * Math.PI) / 180;
+            const tType = mission.theoremType;
+
+            let angA = Math.PI * 0.75;
+            let angB = Math.PI * 0.25;
+            let angP = -Math.PI * 0.5;
+
+            if (tType === "diameter_90") {
+                angA = Math.PI;
+                angB = 0;
+                angP = -Math.PI * 0.6;
+            }
+
+            const ptA = { x: cx + Math.cos(angA) * R, y: cy + Math.sin(angA) * R };
+            const ptB = { x: cx + Math.cos(angB) * R, y: cy + Math.sin(angB) * R };
+            const ptP = { x: cx + Math.cos(angP) * R, y: cy + Math.sin(angP) * R };
 
             ctx.save();
-            ctx.fillStyle = 'rgba(34, 211, 238, 0.18)';
-            ctx.strokeStyle = '#22d3ee';
-            ctx.lineWidth = 2.5;
+
+            // 1. Highlight Arc AB along the circumference
+            ctx.strokeStyle = '#facc15';
+            ctx.lineWidth = 5;
+            ctx.shadowBlur = 14;
+            ctx.shadowColor = '#facc15';
             ctx.beginPath();
-            ctx.moveTo(cx, cy);
-            ctx.arc(cx, cy, maxR * 0.8, startAngle, endAngle, true);
-            ctx.closePath();
+            ctx.arc(cx, cy, R, angB, angA, false);
+            ctx.stroke();
+
+            // Label Arc AB
+            ctx.font = 'bold 11px "JetBrains Mono", monospace';
+            ctx.fillStyle = '#fef08a';
+            const arcLabel = mission.arcFractionText ? `호 AB (${mission.arcFractionText} 원둘레)` : "호 AB";
+            ctx.fillText(arcLabel, cx, cy + R + 18);
+
+            // 2. Stage 0: Geometric lines according to theorem
+            if (tType === "center_double" || tType === "arc_ratio") {
+                ctx.strokeStyle = currentStage >= 1 ? '#818cf8' : 'rgba(129, 140, 248, 0.4)';
+                ctx.lineWidth = 2;
+                ctx.setLineDash([4, 4]);
+                ctx.beginPath();
+                ctx.moveTo(cx, cy);
+                ctx.lineTo(ptA.x, ptA.y);
+                ctx.moveTo(cx, cy);
+                ctx.lineTo(ptB.x, ptB.y);
+                ctx.stroke();
+                ctx.setLineDash([]);
+
+                ctx.strokeStyle = '#818cf8';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.arc(cx, cy, 26, angB, angA, false);
+                ctx.stroke();
+
+                ctx.font = 'bold 11px "JetBrains Mono", monospace';
+                ctx.fillStyle = '#a5b4fc';
+                if (tType === "center_double") {
+                    ctx.fillText(`2θ = ${mission.centerAngle}°`, cx, cy + 34);
+                } else {
+                    ctx.fillText(`호 비례 = ${mission.arcFractionText}`, cx, cy + 34);
+                }
+            } else if (tType === "diameter_90") {
+                ctx.strokeStyle = '#38bdf8';
+                ctx.lineWidth = 2.5;
+                ctx.beginPath();
+                ctx.moveTo(ptA.x, ptA.y);
+                ctx.lineTo(ptB.x, ptB.y);
+                ctx.stroke();
+
+                ctx.font = 'bold 11px "JetBrains Mono", monospace';
+                ctx.fillStyle = '#7dd3fc';
+                ctx.fillText("지름 AB (90° 돔)", cx, cy - 14);
+            } else if (tType === "intersecting_chords") {
+                const ptC = { x: cx + Math.cos(Math.PI * 0.95) * R, y: cy + Math.sin(Math.PI * 0.95) * R };
+                const ptD = { x: cx + Math.cos(Math.PI * 0.05) * R, y: cy + Math.sin(Math.PI * 0.05) * R };
+                const ptTopA = { x: cx + Math.cos(-Math.PI * 0.7) * R, y: cy + Math.sin(-Math.PI * 0.7) * R };
+                const ptTopB = { x: cx + Math.cos(-Math.PI * 0.3) * R, y: cy + Math.sin(-Math.PI * 0.3) * R };
+
+                ctx.strokeStyle = '#c084fc';
+                ctx.lineWidth = 2.5;
+                ctx.beginPath();
+                ctx.moveTo(ptTopA.x, ptTopA.y);
+                ctx.lineTo(ptD.x, ptD.y);
+                ctx.moveTo(ptTopB.x, ptTopB.y);
+                ctx.lineTo(ptC.x, ptC.y);
+                ctx.stroke();
+
+                drawConstellationPoint(cx, cy - 10, "X (교점)");
+                ctx.font = 'bold 11px "JetBrains Mono", monospace';
+                ctx.fillStyle = '#fde047';
+                ctx.fillText(`교각 x = ${currentStage >= 3 ? mission.targetAngle + '°' : '?'}`, cx, cy - 28);
+            } else if (tType === "boss_raid") {
+                const ptC = { x: cx + Math.cos(-Math.PI * 0.15) * R, y: cy + Math.sin(-Math.PI * 0.15) * R };
+                const ptD = { x: cx + Math.cos(-Math.PI * 0.85) * R, y: cy + Math.sin(-Math.PI * 0.85) * R };
+
+                ctx.strokeStyle = '#f43f5e';
+                ctx.lineWidth = 2.5;
+                ctx.beginPath();
+                ctx.moveTo(ptA.x, ptA.y);
+                ctx.lineTo(ptB.x, ptB.y);
+                ctx.lineTo(ptC.x, ptC.y);
+                ctx.lineTo(ptD.x, ptD.y);
+                ctx.closePath();
+                ctx.stroke();
+
+                ctx.strokeStyle = 'rgba(250, 204, 21, 0.6)';
+                ctx.lineWidth = 1.5;
+                ctx.setLineDash([4, 4]);
+                ctx.beginPath();
+                ctx.moveTo(cx, cy);
+                ctx.lineTo(ptA.x, ptA.y);
+                ctx.moveTo(cx, cy);
+                ctx.lineTo(ptC.x, ptC.y);
+                ctx.stroke();
+                ctx.setLineDash([]);
+
+                drawConstellationPoint(ptC.x, ptC.y, "C");
+                drawConstellationPoint(ptD.x, ptD.y, "D (보스약점)");
+            }
+
+            // 3. Stage 1 & 2: Inscribed Angle Lines PA, PB
+            if (tType !== "intersecting_chords" && tType !== "boss_raid") {
+                ctx.strokeStyle = currentStage >= 2 ? '#c084fc' : 'rgba(192, 132, 252, 0.4)';
+                ctx.lineWidth = 2.5;
+                ctx.beginPath();
+                ctx.moveTo(ptP.x, ptP.y);
+                ctx.lineTo(ptA.x, ptA.y);
+                ctx.moveTo(ptP.x, ptP.y);
+                ctx.lineTo(ptB.x, ptB.y);
+                ctx.stroke();
+
+                if (tType === "diameter_90") {
+                    ctx.strokeStyle = '#facc15';
+                    ctx.lineWidth = 2;
+                    ctx.strokeRect(ptP.x - 6, ptP.y + 2, 12, 12);
+                    ctx.font = 'bold 12px "Orbitron", sans-serif';
+                    ctx.fillStyle = '#fef08a';
+                    ctx.fillText("90°", ptP.x, ptP.y - 14);
+                } else {
+                    ctx.strokeStyle = '#c084fc';
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    ctx.arc(ptP.x, ptP.y, 22, Math.PI * 0.25, Math.PI * 0.75, false);
+                    ctx.stroke();
+
+                    ctx.font = 'bold 12px "Orbitron", sans-serif';
+                    ctx.fillStyle = '#f5d0fe';
+                    ctx.fillText(`θ = ${currentStage >= 3 ? mission.targetAngle + '°' : '?'}`, ptP.x, ptP.y - 14);
+                }
+                drawConstellationPoint(ptP.x, ptP.y, "P");
+            }
+
+            drawConstellationPoint(ptA.x, ptA.y, "A");
+            drawConstellationPoint(ptB.x, ptB.y, "B");
+
+            // 4. Stage 3: Fully Synchronized 100% Locked Arc Dome Barrier
+            if (currentStage >= 3) {
+                ctx.strokeStyle = '#a855f7';
+                ctx.lineWidth = 6;
+                ctx.shadowBlur = 25;
+                ctx.shadowColor = '#c084fc';
+                ctx.beginPath();
+                ctx.arc(cx, cy, R, 0, Math.PI * 2);
+                ctx.stroke();
+
+                ctx.font = 'bold 13px "Cinzel", sans-serif';
+                ctx.fillStyle = '#fef08a';
+                ctx.shadowBlur = 12;
+                ctx.fillText(`⚡ 100% 락온! 원주각 돔 전개 [θ = ${mission.targetAngle}°]`, cx, cy - R - 14);
+            }
+
+            ctx.restore();
+        }
+
+        function drawConstellationPoint(x, y, label) {
+            ctx.save();
+            ctx.fillStyle = '#facc15';
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.arc(x, y, 5, 0, Math.PI * 2);
             ctx.fill();
             ctx.stroke();
 
-            const meteorRad = (startAngle + endAngle) / 2;
-            const mx = cx + Math.cos(meteorRad) * (maxR * 0.85);
-            const my = cy + Math.sin(meteorRad) * (maxR * 0.85);
-
-            ctx.font = '20px sans-serif';
+            ctx.font = 'bold 12px "JetBrains Mono", monospace';
+            ctx.fillStyle = '#fef08a';
             ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            ctx.fillText("☄️", mx, my);
+            ctx.fillText(label, x + (x > canvas.width / 2 ? 14 : -14), y + (y > canvas.height / 2 ? 14 : -10));
+            ctx.restore();
+        }
 
-            ctx.font = 'bold 11px sans-serif';
-            ctx.fillStyle = '#f87171';
-            ctx.fillText(`중심각 ${mission.angle}° 메테오`, mx, my + 18);
+        function drawOpponentMiniOrbit(x, y) {
+            if (!lastKnownRoomData) return;
+            const enemyTeam = myTeam === 'blue' ? 'red' : 'blue';
+            const enemyWaves = enemyTeam === 'blue' ? (lastKnownRoomData.blueWaves || 0) : (lastKnownRoomData.redWaves || 0);
+            const enemyStage = enemyTeam === 'blue' ? (lastKnownRoomData.blueStage || 0) : (lastKnownRoomData.redStage || 0);
+
+            ctx.save();
+            ctx.fillStyle = 'rgba(15, 23, 42, 0.85)';
+            ctx.strokeStyle = enemyTeam === 'red' ? '#fb7185' : '#818cf8';
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            ctx.roundRect ? ctx.roundRect(x, y, 125, 65, 8) : ctx.rect(x, y, 125, 65);
+            ctx.fill();
+            ctx.stroke();
+
+            ctx.font = 'bold 9px "JetBrains Mono", monospace';
+            ctx.fillStyle = enemyTeam === 'red' ? '#fda4af' : '#c7d2fe';
+            ctx.fillText(`📡 적 성단 피드`, x + 8, y + 15);
+
+            ctx.font = 'bold 10px "Orbitron", sans-serif';
+            ctx.fillStyle = '#facc15';
+            ctx.fillText(`수호: ${enemyWaves} / 5`, x + 8, y + 32);
+
+            const stageNames = ["1단계: 판별", "2단계: 연계", "3단계: 각도", "⚠️ 돔 격발!"];
+            ctx.fillStyle = enemyStage === 3 ? '#ef4444' : '#e9d5ff';
+            ctx.fillText(stageNames[enemyStage] || "대기", x + 8, y + 48);
+
+            if (enemyStage === 3) {
+                ctx.fillStyle = (Date.now() % 400 < 200) ? '#ef4444' : '#7f1d1d';
+                ctx.beginPath();
+                ctx.arc(x + 105, y + 25, 5, 0, Math.PI * 2);
+                ctx.fill();
+            }
             ctx.restore();
         }
     </script>
